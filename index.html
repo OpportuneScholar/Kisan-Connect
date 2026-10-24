@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kisan Connect — Empowering Small and Marginal Farmers</title>
+  <meta name="description" content="Integrated AgriTech platform empowering small & marginal farmers with direct APMC mandi prices, machinery pooling, AI crop doctor, and government subsidies." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+</head>
+<body>
+
+  <!-- Top Emergency Helpline & Language Bar -->
+  <header class="top-helpline-bar">
+    <div class="helpline-content">
+      <span class="helpline-pill">KISAN HELPLINE</span>
+      <span data-i18n="helplineText">Kisan Call Centre (Toll-Free): 1551</span>
+      <a href="tel:1551" class="btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.76rem; background: #2D6A4F; color: #FFF; border: none;" data-i18n="emergencyCall">Call 1551</a>
+    </div>
+    <div class="top-bar-right">
+      <div class="lang-select-wrapper">
+        <select id="lang-selector" aria-label="Select Language">
+          <option value="en">English</option>
+          <option value="hi" selected>हिन्दी (Hindi)</option>
+          <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+          <option value="mr">मराठी (Marathi)</option>
+          <option value="te">తెలుగు (Telugu)</option>
+          <option value="bn">বাংলা (Bengali)</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Brand Navigation Bar -->
+  <div class="main-header">
+    <div class="header-inner">
+      <div class="brand-wrapper">
+        <span class="brand-logo-icon" aria-hidden="true">KC</span>
+        <div>
+          <h1 class="brand-title" data-i18n="appName">Kisan Connect</h1>
+          <p class="brand-subtitle" data-i18n="appTagline">Empowering Small & Marginal Farmers</p>
+        </div>
+      </div>
+
+      <div class="header-action-group">
+        <button id="btn-voice-search" class="btn btn-outline" title="Ask by Voice / बोलकर पूछें">
+          Kisan Bol <span>Voice</span>
+        </button>
+        <button id="account-action" class="btn btn-outline" onclick="Auth.open('login')">Log in</button>
+        <button id="btn-register" class="btn btn-primary" onclick="Auth.open('register')">Create account</button>
+        <button class="btn btn-primary" onclick="App.openModal('modal-list-harvest')">
+          <span data-i18n="btnListProduce">List produce</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop Navigation Tabs Bar -->
+  <nav class="desktop-nav-bar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <button class="nav-tab-btn active" data-tab="tab-mandi">
+        <span data-i18n="navMandi">Kisan Mandi</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-machinery">
+        <span data-i18n="navMachinery">Equipment Rental</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-doctor">
+        <span data-i18n="navDoctor">AI Crop Doctor</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-schemes">
+        <span data-i18n="navSchemes">Govt Schemes</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-weather">
+        <span data-i18n="navWeather">Weather & Advisory</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-ledger">
+        <span data-i18n="navLedger">Farm Ledger (Khata)</span>
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-community">
+        <span data-i18n="navCommunity">Kisan Chopal</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-banner">
+    <div class="hero-inner">
+      <div class="hero-tagline-badge">A practical digital toolkit for Indian farmers</div>
+      <h2 class="hero-title">Grow with better information. Sell with more choice.</h2>
+      <p class="hero-desc">
+        Explore produce listings, compare market information, find farm equipment, check government schemes and keep track of cultivation costs — in one place.
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-light" onclick="App.switchTab('tab-mandi')">Explore the marketplace</button>
+        <button class="btn btn-outline hero-outline" onclick="App.switchTab('tab-weather')">Weather and crop guidance</button>
+      </div>
+      <p class="hero-note">Prototype notice: market, weather and advisory information may include sample data. Check the source before making financial or crop-treatment decisions.</p>
+    </div>
+  </section>
+
+  <!-- Main Content Body -->
+  <main class="main-content-wrapper">
+
+    <!-- ====================================================================
+         TAB 1: KISAN MANDI (Marketplace & APMC Live Prices)
+         ==================================================================== -->
+    <div id="tab-mandi" class="tab-pane active">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>Kisan Mandi — Market prices and direct sales</h2>
+          <p>Compare official daily mandi records where configured, or clearly labelled community-reported prices.</p>
+        </div>
+        <button class="btn btn-success" onclick="App.openModal('modal-list-harvest')">
+          + Sell Directly to Buyers
+        </button>
+      </div>
+
+      <section class="live-data-panel" aria-labelledby="live-mandi-heading">
+        <div class="live-data-panel-head">
+          <div>
+            <h3 id="live-mandi-heading">Daily mandi rates</h3>
+            <p>Government AGMARKNET data is preferred. Community averages are shown separately and require at least three recent reports.</p>
+          </div>
+          <span id="mandi-source-status" class="badge badge-neutral">Checking data source…</span>
+        </div>
+        <div class="live-data-filters">
+          <label>Crop <input id="live-mandi-commodity" type="text" placeholder="e.g. Wheat" /></label>
+          <label>State <input id="live-mandi-state" type="text" placeholder="e.g. Uttar Pradesh" /></label>
+          <label>District <input id="live-mandi-district" type="text" placeholder="e.g. Jaunpur" /></label>
+          <label>Market <input id="live-mandi-market" type="text" placeholder="Optional mandi name" /></label>
+          <button id="btn-load-live-mandi" class="btn btn-primary" type="button">Find rates</button>
+        </div>
+        <div id="live-mandi-results" class="live-data-results" aria-live="polite"><p class="text-sm text-muted">Choose a crop or district and load available market records.</p></div>
+        <details class="mandi-report-details">
+          <summary>Submit a local price report</summary>
+          <p class="text-sm text-muted">For farmers and bulk buyers. Community reports are not official prices and are only averaged after three recent reports for the same market and crop.</p>
+          <form id="mandi-price-report-form" class="live-data-filters">
+            <label>Crop <input name="commodity" required minlength="2" maxlength="120" /></label>
+            <label>Mandi / market <input name="market" required minlength="2" maxlength="180" /></label>
+            <label>District <input name="district" required minlength="2" maxlength="120" /></label>
+            <label>State <input name="state" required minlength="2" maxlength="120" /></label>
+            <label>Price (₹/quintal) <input name="pricePerQuintal" type="number" min="1" max="1000000" step="0.01" required /></label>
+            <label>Note (optional) <input name="note" maxlength="300" /></label>
+            <button class="btn btn-outline" type="submit">Submit report</button>
+          </form>
+        </details>
+      </section>
+
+      <!-- MSP Watchdog Alert Banner -->
+      <div id="msp-watchdog-banner"></div>
+
+      <!-- Filter Controls Bar -->
+      <div class="filter-controls-bar">
+        <div class="search-input-group">
+          <span class="icon">🔍</span>
+          <input type="text" id="mandi-search-input" placeholder="Search wheat, mustard, paddy, mandi name..." />
+        </div>
+
+        <div class="filter-pills-group">
+          <button class="category-pill-btn active mandi-category-btn" data-category="all">All Crops</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="cereals">Cereals</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="oilseeds">Oilseeds</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="pulses">Pulses</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="cash crops">Cash Crops</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="vegetables">Vegetables</button>
+          <button class="category-pill-btn mandi-category-btn" data-category="millets">Millets (श्रीअन्न)</button>
+        </div>
+
+        <select id="mandi-state-filter" class="dropdown-filter-select">
+          <option value="all">All States</option>
+          <option value="madhya pradesh">Madhya Pradesh</option>
+          <option value="punjab">Punjab</option>
+          <option value="haryana">Haryana</option>
+          <option value="rajasthan">Rajasthan</option>
+          <option value="gujarat">Gujarat</option>
+          <option value="maharashtra">Maharashtra</option>
+          <option value="karnataka">Karnataka</option>
+          <option value="andhra pradesh">Andhra Pradesh</option>
+          <option value="uttar pradesh">Uttar Pradesh</option>
+        </select>
+      </div>
+
+      <p class="prototype-data-note">Reference cards below are illustrative sample data. Use the daily mandi rates panel above for configured official records or clearly labelled community reports.</p>
+      <!-- Mandi Commodity Cards -->
+      <div id="mandi-price-cards" class="cards-grid-3"></div>
+
+      <!-- Direct Farmer Produce Listings -->
+      <div class="section-header-bar" style="margin-top: 40px;">
+        <div class="section-title-group">
+          <h2>Fresh produce from farmers</h2>
+          <p>Browse sample produce and live listings published by registered farmers. Confirm quality, availability and terms directly before purchase.</p>
+        </div>
+        <div class="farmer-market-actions">
+          <button id="btn-my-enquiries" class="btn btn-outline" type="button" hidden onclick="MandiModule.loadIncomingEnquiries()">Incoming enquiries</button>
+          <button class="btn btn-outline" onclick="App.openModal('modal-list-harvest')">+ List Harvest</button>
+        </div>
+      </div>
+      <div id="incoming-enquiries" class="incoming-enquiries" hidden></div>
+      <div id="direct-farmer-listings" class="cards-grid-3"></div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 2: YANTRA SAHAY (Machinery Rental & Co-Farming Pooling)
+         ==================================================================== -->
+    <div id="tab-machinery" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>Yantra Sahay — Equipment rental and pooling</h2>
+          <p>Uber for farm implements: Access tractors, harvesters, laser levelers, and drone sprayers at affordable hourly/acre rates.</p>
+        </div>
+      </div>
+
+      <!-- Co-Farming Equipment Pooling Calculator -->
+      <div id="pooling-calculator-section" class="pooling-calc-container">
+        <div class="calc-header">
+          <div>
+            <h3>🤝 Community Machinery Pooling Calculator</h3>
+            <p class="text-muted">See how much you and your neighbors save by co-renting equipment for contiguous plots.</p>
+          </div>
+          <span class="badge badge-success">Save up to 35%</span>
+        </div>
+
+        <div class="calc-controls-row">
+          <div class="calc-field-group">
+            <label for="pool-calc-machine">Select Equipment to Rent:</label>
+            <select id="pool-calc-machine">
+              <option value="mach-4">Preet Multi-Crop Combine Harvester (₹1,550/acre)</option>
+              <option value="mach-1">Mahindra 575 DI Tractor with Cultivator (₹850/acre)</option>
+              <option value="mach-2">Garuda Agri Drone Sprayer with Pilot (₹280/acre)</option>
+              <option value="mach-3">Shaktiman Heavy Duty Rotavator (₹750/acre)</option>
+              <option value="mach-6">Happy Seeder / Super Seeder (₹850/acre)</option>
+            </select>
+          </div>
+
+          <div class="calc-field-group">
+            <label for="pool-calc-acres">Your Farm Acreage:</label>
+            <input type="number" id="pool-calc-acres" value="1.5" min="0.5" max="10" step="0.5" />
+          </div>
+
+          <div class="calc-field-group">
+            <label for="pool-calc-farmers">
+              Neighbor Farmers Pooling: <span id="pool-calc-farmers-val" class="calc-slider-val">3 Neighbor Farmers</span>
+            </label>
+            <input type="range" id="pool-calc-farmers" min="1" max="5" value="3" />
+          </div>
+        </div>
+
+        <div id="pooling-calc-results"></div>
+      </div>
+
+      <!-- Machinery Filters -->
+      <div class="filter-controls-bar">
+        <div class="search-input-group">
+          <span class="icon">🔍</span>
+          <input type="text" id="machinery-search-input" placeholder="Search tractor, harvester, drone, rotavator..." />
+        </div>
+
+        <div class="filter-pills-group">
+          <button class="category-pill-btn active machinery-category-btn" data-category="all">All Implements</button>
+          <button class="category-pill-btn machinery-category-btn" data-category="tractors">Tractors & Tillers</button>
+          <button class="category-pill-btn machinery-category-btn" data-category="harvesting">Harvesters</button>
+          <button class="category-pill-btn machinery-category-btn" data-category="spraying & drones">Drone Sprayers</button>
+          <button class="category-pill-btn machinery-category-btn" data-category="land preparation">Land Prep</button>
+          <button class="category-pill-btn machinery-category-btn" data-category="irrigation">Solar Pumps</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="text-sm font-semibold">Max Distance:</span>
+          <input type="range" id="machinery-distance-slider" min="2" max="25" value="20" style="width: 100px;" />
+          <span id="machinery-distance-val" class="text-sm font-bold text-green">20 km</span>
+        </div>
+      </div>
+
+      <!-- Machinery Cards Grid -->
+      <div id="machinery-cards-grid" class="cards-grid-3"></div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 3: KISAN AI DOCTOR (Crop Health & Pest Diagnostics)
+         ==================================================================== -->
+    <div id="tab-doctor" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>Kisan Crop Doctor — Crop-health reference</h2>
+          <p>Browse crop-health reference guides and listen to general guidance. Photo-based AI diagnosis is not connected in this prototype.</p>
+        </div>
+      </div>
+
+      <div class="doctor-layout-grid">
+        <!-- Left: Upload & Specimen Selector -->
+        <div class="doctor-upload-sidebar">
+          <label for="crop-photo-input" class="upload-drop-zone">
+            <div class="upload-icon">📷</div>
+            <strong>Upload Leaf / Crop Photo</strong>
+            <p class="text-sm text-muted">Click to select photo from phone or gallery</p>
+            <input type="file" id="crop-photo-input" accept="image/*" style="display: none;" />
+          </label>
+
+          <div id="diagnosis-image-preview" style="text-align: center; margin-bottom: 16px;"></div>
+
+          <div class="sample-specimens-heading">
+            <span>Or test with field specimens:</span>
+            <span class="badge badge-neutral">Pre-Loaded</span>
+          </div>
+
+          <div id="disease-samples-grid" class="disease-samples-grid"></div>
+        </div>
+
+        <!-- Right: Diagnostic Report Output -->
+        <div>
+          <div id="diagnosis-report-container"></div>
+        </div>
+      </div>
+
+      <!-- AI Agribot Chatbot: Kisan Sahayak -->
+      <div id="kisan-chat-wrapper" class="kisan-chat-box">
+        <div class="chat-header">
+          <div>
+            <h3>🤖 Kisan Sahayak AI — 24x7 Agronomy Chat Assistant</h3>
+            <p class="text-sm text-muted">Ask questions in Hindi, English, Punjabi, Marathi, Telugu, or Bengali.</p>
+          </div>
+          <span class="badge badge-success">✓ Online & Ready</span>
+        </div>
+
+        <div id="ai-chat-messages" class="chat-messages-area"></div>
+
+        <div class="preset-queries-row">
+          <span class="text-xs text-muted" style="align-self: center;">Quick Questions:</span>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to control Yellow Rust in wheat?')">🌾 Yellow Rust in Wheat</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to make Jeevamrit at home?')">🧪 Homemade Jeevamrit</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to get 90% subsidy on Solar Pump?')">☀️ Solar Pump Subsidy</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('Can I spray pesticide in today weather?')">🌦️ Spray Window Check</button>
+        </div>
+
+        <div class="chat-input-row">
+          <input type="text" id="ai-chat-input" placeholder="Type your crop or subsidy question here (उदा. गेहूं में पीलापन कैसे दूर करें?)..." />
+          <button id="btn-send-chat" class="btn btn-primary">Send ↗</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 4: SARKARI YOJANA MITRA (Government Schemes Navigator)
+         ==================================================================== -->
+    <div id="tab-schemes" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>🏛️ Sarkari Yojana Mitra — Government Schemes & Subsidies</h2>
+          <p>Find out every direct benefit, insurance scheme, and equipment subsidy tailored for your landholding profile.</p>
+        </div>
+      </div>
+
+      <!-- 1-Click Interactive Eligibility Wizard -->
+      <div class="wizard-container">
+        <div class="section-header-bar" style="margin-bottom: 14px;">
+          <div>
+            <h3>🎯 1-Click Farmer Scheme Eligibility Wizard</h3>
+            <p class="text-muted">Select your farm profile to calculate eligible government subsidies automatically.</p>
+          </div>
+        </div>
+
+        <form id="eligibility-wizard-form" class="wizard-form-grid">
+          <div class="form-group">
+            <label for="wiz-land-size">Landholding Size:</label>
+            <select id="wiz-land-size">
+              <option value="marginal" selected>Marginal Farmer (&lt; 2.5 Acres / 1 Ha)</option>
+              <option value="small">Small Farmer (2.5 to 5.0 Acres / 1-2 Ha)</option>
+              <option value="medium">Medium / Large Farmer (&gt; 5 Acres)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="wiz-category">Farmer Category:</label>
+            <select id="wiz-category">
+              <option value="general" selected>General / OBC Farmer</option>
+              <option value="sc_st">SC / ST Farmer (+10% Subsidy Bonus)</option>
+              <option value="woman">Woman Headed Farm Family</option>
+              <option value="tenant">Tenant Farmer / Sharecropper (Bataidar)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="wiz-water-source">Irrigation Source:</label>
+            <select id="wiz-water-source">
+              <option value="diesel" selected>Diesel Pump Set (Wants Solar)</option>
+              <option value="rainfed">Rainfed / Dryland (Barani)</option>
+              <option value="electric">Electric Tubewell</option>
+              <option value="canal">Canal Irrigation</option>
+            </select>
+          </div>
+        </form>
+
+        <div id="wizard-results-container"></div>
+      </div>
+
+      <!-- Schemes Filters & Catalog -->
+      <div class="filter-controls-bar">
+        <div class="search-input-group">
+          <span class="icon">🔍</span>
+          <input type="text" id="schemes-search-input" placeholder="Search PM-KISAN, crop insurance, solar pumps, loans..." />
+        </div>
+
+        <div class="filter-pills-group">
+          <button class="category-pill-btn active scheme-category-btn" data-category="all">All Schemes</button>
+          <button class="category-pill-btn scheme-category-btn" data-category="income support">Income Support</button>
+          <button class="category-pill-btn scheme-category-btn" data-category="crop insurance">Crop Insurance</button>
+          <button class="category-pill-btn scheme-category-btn" data-category="solar">Solar Energy</button>
+          <button class="category-pill-btn scheme-category-btn" data-category="machinery">Machinery Subsidies</button>
+          <button class="category-pill-btn scheme-category-btn" data-category="credit">Kisan Credit Card</button>
+        </div>
+      </div>
+
+      <div id="schemes-cards-grid" class="cards-grid-3"></div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 5: MAUSAM & AGRO-ADVISORY (Hyperlocal Weather)
+         ==================================================================== -->
+    <div id="tab-weather" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>Weather & Farm Advisory</h2>
+          <p>Seven-day forecast based on the selected village, town or city. Check the timestamp before making farm decisions.</p>
+        </div>
+      </div>
+      <div class="live-data-panel weather-location-panel">
+        <form id="weather-location-form" class="live-data-filters">
+          <label>Village / town / city <input id="weather-location-input" name="location" value="Lucknow" required minlength="2" maxlength="100" /></label>
+          <button class="btn btn-primary" type="submit">Update forecast</button>
+          <button class="btn btn-outline" id="weather-speak-button" type="button">Listen in Hindi</button>
+        </form>
+        <div id="weather-current-summary" class="weather-current-summary" aria-live="polite">Loading current weather…</div>
+        <p id="weather-source-note" class="text-sm text-muted">Forecast source: Open-Meteo. This is a forecast, not a guarantee of local field conditions.</p>
+      </div>
+      <div id="weather-forecast-grid" class="weather-cards-grid" aria-live="polite"></div>
+
+      <!-- General Agro-Advisory Recommendations -->
+      <div style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm);">
+        <h3 style="color: var(--primary-dark); margin-bottom: 12px;">🌾 Key Seasonal Crop Directives (Rabi 2026-27)</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <div style="background: #F0FDF4; border-left: 4px solid var(--primary); padding: 12px 14px; border-radius: var(--radius-sm);">
+            <strong style="color: var(--primary-dark);">🌾 Wheat Sowing Window:</strong>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Optimum sowing temperature is 20-22°C. Treat seed with Carboxin + Thiram (2g/kg seed) to prevent loose smut.</p>
+          </div>
+          <div style="background: #FFFBEB; border-left: 4px solid #D97706; padding: 12px 14px; border-radius: var(--radius-sm);">
+            <strong style="color: #92400E;">🌱 Mustard Aphid Caution:</strong>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Install yellow sticky traps early. Never spray during morning bee pollination hours (8 AM to 11 AM).</p>
+          </div>
+          <div style="background: #EFF6FF; border-left: 4px solid #2563EB; padding: 12px 14px; border-radius: var(--radius-sm);">
+            <strong style="color: #1E40AF;">💧 Water Conservation:</strong>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">For small plots, irrigate at critical stages only (CRI stage at 21 days for wheat). Avoid excess flood irrigation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 6: KISAN KHATA (Farm Ledger & ROI Calculator)
+         ==================================================================== -->
+    <div id="tab-ledger" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>📊 Kisan Khata — Digital Farm Ledger & ROI Calculator</h2>
+          <p>Know your real cost of production per quintal and calculate true net profit per acre.</p>
+        </div>
+      </div>
+
+      <div class="ledger-layout-grid">
+        <!-- Input Form -->
+        <div class="ledger-form-box">
+          <h3 class="ledger-form-section-title">📝 Enter Your Seasonal Farm Inputs</h3>
+          <form id="farm-ledger-form">
+            <div class="ledger-input-grid">
+              <div class="ledger-input-group">
+                <label for="ledger-crop">Cultivated Crop:</label>
+                <select id="ledger-crop">
+                  <option value="Wheat" selected>Wheat (गेहूं)</option>
+                  <option value="Basmati Paddy">Basmati Paddy (धान)</option>
+                  <option value="Mustard">Mustard (सरसों)</option>
+                  <option value="Soybean">Soybean (सोयाबीन)</option>
+                  <option value="Cotton">Cotton (कपास)</option>
+                  <option value="Tomato">Tomato (टमाटर)</option>
+                </select>
+              </div>
+
+              <div class="ledger-input-group">
+                <label for="ledger-acres">Field Area (Acres):</label>
+                <input type="number" id="ledger-acres" value="2.0" step="0.5" min="0.5" />
+              </div>
+            </div>
+
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Cultivation Expenses (₹)</div>
+
+            <div class="ledger-input-grid">
+              <div class="ledger-input-group">
+                <label for="cost-seeds">Seeds Cost (₹):</label>
+                <input type="number" id="cost-seeds" value="2800" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="cost-fertilizers">Fertilizers & Pesticides (₹):</label>
+                <input type="number" id="cost-fertilizers" value="4500" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="cost-machinery">Tractor & Machine Rental (₹):</label>
+                <input type="number" id="cost-machinery" value="5200" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="cost-labor">Farm Labor Wages (₹):</label>
+                <input type="number" id="cost-labor" value="6000" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="cost-irrigation">Irrigation / Diesel Fuel (₹):</label>
+                <input type="number" id="cost-irrigation" value="1800" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="cost-misc">Transport & Bags (₹):</label>
+                <input type="number" id="cost-misc" value="1200" />
+              </div>
+            </div>
+
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; margin-top: 14px;">Harvest Yield & Sale Revenue</div>
+
+            <div class="ledger-input-grid">
+              <div class="ledger-input-group">
+                <label for="rev-yield-qtl">Total Harvest (Quintals):</label>
+                <input type="number" id="rev-yield-qtl" value="36" />
+              </div>
+              <div class="ledger-input-group">
+                <label for="rev-price-qtl">Sale Price per Quintal (₹):</label>
+                <input type="number" id="rev-price-qtl" value="2480" />
+              </div>
+              <div class="ledger-input-group" style="grid-column: 1 / -1;">
+                <label for="rev-straw">Bhusa / Fodder By-Product Revenue (₹):</label>
+                <input type="number" id="rev-straw" value="4500" />
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Output Card -->
+        <div id="ledger-results-card"></div>
+      </div>
+    </div>
+
+
+    <!-- ====================================================================
+         TAB 7: KISAN CHOPAL (Farmer Community & FPO Hub)
+         ==================================================================== -->
+    <div id="tab-community" class="tab-pane">
+      <div class="section-header-bar">
+        <div class="section-title-group">
+          <h2>👥 Kisan Chopal — Peer Knowledge Exchange & FPO Network</h2>
+          <p>Real stories, cost-cutting innovations, and organic success from smallholders across India.</p>
+        </div>
+        <button class="btn btn-primary" onclick="App.openModal('modal-new-post')">
+          + Share Your Experience
+        </button>
+      </div>
+
+      <div id="community-posts-container" class="community-posts-list"></div>
+    </div>
+
+  </main>
+
+
+  <!-- ======================================================================
+       MODALS SYSTEM
+       ====================================================================== -->
+
+  <!-- Modal 1: List My Harvest for Direct Sale -->
+  <div id="modal-list-harvest" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <h3>List produce for sale</h3>
+      <p class="text-sm text-muted">Add the details buyers need. Sign in as a farmer to publish a listing for other users.</p>
+
+      <form id="list-harvest-form">
+        <div class="modal-form-grid">
+          <div class="form-group">
+            <label for="harvest-farmer-name">Your Full Name:</label>
+            <input type="text" id="harvest-farmer-name" placeholder="उदा. Ramesh Kumar" required />
+          </div>
+
+          <div class="form-group">
+            <label for="harvest-phone">Mobile / WhatsApp Number:</label>
+            <input type="tel" id="harvest-phone" placeholder="+91 98765 43210" required />
+          </div>
+
+          <div class="form-group">
+            <label for="harvest-crop-name">Crop & Variety:</label>
+            <input type="text" id="harvest-crop-name" placeholder="e.g. Lokwan Wheat / Sharbati" required />
+          </div>
+
+          <div class="form-group">
+            <label for="harvest-qty">Quantity Available (Quintals):</label>
+            <input type="number" id="harvest-qty" placeholder="e.g. 25" min="1" required />
+          </div>
+
+          <div class="form-group">
+            <label for="harvest-price">Price (₹ / Quintal):</label>
+            <input type="number" id="harvest-price" placeholder="e.g. 2450" min="1" required />
+          </div>
+          <div class="form-group">
+            <label for="harvest-audience">Who can buy this produce?</label>
+            <select id="harvest-audience" required>
+              <option value="both">Local buyers and bulk buyers</option>
+              <option value="local">Local buyers only</option>
+              <option value="bulk">Bulk buyers / traders</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="harvest-location">Mandi Yard / Village Location:</label>
+            <input type="text" id="harvest-location" placeholder="e.g. Dewas Mandi Road, MP" required />
+          </div>
+
+          <div class="form-group full-span">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="harvest-organic" />
+              <span>🌱 This harvest is Organically Grown (PGS-India / NPOP Certified or Zero-Chemical)</span>
+            </label>
+          </div>
+
+          <div class="form-group full-span">
+            <label for="harvest-notes">Grain Quality Notes / Moisture / Packaging:</label>
+            <textarea id="harvest-notes" placeholder="e.g. Dry grains with 11% moisture, bagged in 50kg jute bags, ready for farm-gate pickup."></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+          <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish Harvest Listing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Modal 2: 7-Day Price Trajectory Chart -->
+  <div id="modal-price-chart" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <div id="price-chart-modal-content"></div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button class="btn btn-primary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal 3: Verified Direct Buyers List -->
+  <div id="modal-buyers" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <div id="buyers-modal-content"></div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+        <button class="btn btn-outline" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal 4: Book Machine / Custom Hiring Center -->
+  <div id="modal-booking" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <h3>🚜 Book Farm Equipment</h3>
+      <div id="booking-machine-details"></div>
+
+      <form id="machinery-booking-form">
+        <input type="hidden" id="booking-machine-id" />
+        <div class="modal-form-grid">
+          <div class="form-group">
+            <label for="book-farmer-name">Your Full Name:</label>
+            <input type="text" id="book-farmer-name" placeholder="उदा. Sukhwinder Singh" required />
+          </div>
+
+          <div class="form-group">
+            <label for="book-phone">Mobile Number:</label>
+            <input type="tel" id="book-phone" placeholder="+91 98765 43210" required />
+          </div>
+
+          <div class="form-group">
+            <label for="book-date">Requested Date:</label>
+            <input type="date" id="book-date" required />
+          </div>
+
+          <div class="form-group">
+            <label for="book-acres">Area to Cover (Acres):</label>
+            <input type="number" id="book-acres" value="2.0" step="0.5" min="0.5" required />
+          </div>
+
+          <div class="form-group full-span">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 10px; border-radius: 6px;">
+              <input type="checkbox" id="book-pooling-optin" checked />
+              <span><strong>🤝 Enable Neighbor Pooling:</strong> Share equipment transit with adjoining field owners for a 25% cluster discount.</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+          <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm & Generate Booking Slip</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Modal 5: Confirmed Booking Slip -->
+  <div id="modal-booking-slip" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <div id="booking-slip-content"></div>
+    </div>
+  </div>
+
+
+  <!-- Modal 6: Government Scheme Detail & Document Checklist -->
+  <div id="modal-scheme-detail" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <div id="scheme-detail-modal-content"></div>
+    </div>
+  </div>
+
+
+  <!-- Modal 7: New Community Post in Kisan Chopal -->
+  <div id="modal-new-post" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close-btn" data-close-modal>&times;</button>
+      <h3>✍️ Share Your Farming Innovation or Experience</h3>
+      <p class="text-sm text-muted">Help fellow smallholders reduce input costs, share pooling experiences, or report mandi prices.</p>
+
+      <form id="new-community-post-form">
+        <div class="modal-form-grid">
+          <div class="form-group">
+            <label for="post-author">Your Name:</label>
+            <input type="text" id="post-author" placeholder="उदा. Kailash Meena" required />
+          </div>
+
+          <div class="form-group">
+            <label for="post-village">Village & District:</label>
+            <input type="text" id="post-village" placeholder="e.g. Kota, Rajasthan" required />
+          </div>
+
+          <div class="form-group">
+            <label for="post-tag">Topic Category:</label>
+            <select id="post-tag">
+              <option value="Cost Reduction">Cost Reduction</option>
+              <option value="Equipment Pooling">Equipment Pooling</option>
+              <option value="Direct Selling">Direct Selling</option>
+              <option value="Organic Farming">Organic Farming</option>
+              <option value="Bumper Yield">Bumper Yield</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="post-title">Headline / Summary:</label>
+            <input type="text" id="post-title" placeholder="e.g. How we saved ₹12,000 using drip and bio-pesticides" required />
+          </div>
+
+          <div class="form-group full-span">
+            <label for="post-content">Detailed Experience:</label>
+            <textarea id="post-content" placeholder="Share exact quantities, costs, and results for your fellow farmers..." required></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+          <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+          <button type="submit" class="btn btn-primary">Post to Kisan Chopal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-bar" aria-label="Mobile Navigation">
+    <button class="mobile-nav-btn active" data-tab="tab-mandi">
+      <span data-i18n="navMandi">Mandi</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="tab-machinery">
+      <span data-i18n="navMachinery">Yantra</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="tab-doctor">
+      <span data-i18n="navDoctor">AI Doctor</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="tab-schemes">
+      <span data-i18n="navSchemes">Schemes</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="tab-ledger">
+      <span data-i18n="navLedger">Khata</span>
+    </button>
+  </nav>
+
+  <!-- Demo account access: replace with server-side authentication before production use. -->
+  <div id="auth-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-box auth-modal-box" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <button class="modal-close-btn" type="button" data-close-modal aria-label="Close">&times;</button>
+      <p class="auth-eyebrow">KISAN CONNECT</p>
+      <h3 id="auth-title">Welcome back</h3>
+      <p class="text-sm text-muted" id="auth-description">Sign in to personalise your experience.</p>
+      <form id="auth-form">
+        <div class="form-group" id="auth-name-group" hidden>
+          <label for="auth-name">Full name</label>
+          <input id="auth-name" name="name" autocomplete="name" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label for="auth-email">Email address</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="auth-role">I am a</label>
+          <select id="auth-role" name="role" required>
+            <option value="farmer">Farmer / Seller</option>
+            <option value="localBuyer">Local Buyer</option>
+            <option value="bulkBuyer">Bulk Buyer / Trader</option>
+          </select>
+        </div>
+        <div class="form-group" id="auth-password-group">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required />
+        </div>
+        <p class="auth-demo-note">Your account is stored securely on the server. Use a unique password.</p>
+        <button class="btn btn-primary auth-submit" type="submit" id="auth-submit">Log in</button>
+      </form>
+      <p class="auth-switch-line"><span id="auth-switch-copy">New to Kisan Connect?</span> <button type="button" class="text-button" id="auth-switch">Create an account</button></p>
+    </div>
+  </div>
+
+  <div id="kisan-toast" class="kisan-toast"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/mandi.js"></script>
+  <script src="js/machinery.js"></script>
+  <script src="js/ai-doctor.js"></script>
+  <script src="js/schemes.js"></script>
+  <script src="js/farm-ledger.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
