@@ -41,6 +41,24 @@ const App = {
     const select = document.getElementById("lang-selector");
     if (select) select.value = this.currentLang;
     this.applyTranslations(this.currentLang);
+    this.applyGoogleTranslation(this.currentLang);
+  },
+
+  applyGoogleTranslation(lang) {
+    // Google Translate translates the whole page, including untagged text and dynamically rendered cards.
+    const apply = () => {
+      const combo = document.querySelector(".goog-te-combo");
+      if (!combo) return false;
+      combo.value = lang;
+      combo.dispatchEvent(new Event("change", { bubbles: true }));
+      return true;
+    };
+    if (apply()) return;
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (apply() || attempts >= 20) clearInterval(timer);
+    }, 300);
   },
 
   setupLanguageSwitcher() {
@@ -52,7 +70,8 @@ const App = {
           localStorage.setItem("kisan_lang", this.currentLang);
         } catch (err) {}
         this.applyTranslations(this.currentLang);
-        this.showToast(`Language switched to ${select.options[select.selectedIndex].text}`);
+        this.applyGoogleTranslation(this.currentLang);
+        this.showToast(`Language selected: ${select.options[select.selectedIndex].text}`);
       });
     }
   },

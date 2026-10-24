@@ -2192,3 +2192,23 @@ button {
 .weather-current-summary span{color:var(--text-muted);font-weight:400}
 .weather-live-error{padding:14px;border:1px solid #e5c9a2;background:#fffaf0;border-radius:8px;color:#7c4a03}
 @media(max-width:640px){.live-data-panel{padding:14px}.live-data-panel-head{display:block}.live-data-panel-head .badge{display:inline-block;margin-top:10px}.live-data-filters label{min-width:100%;flex-basis:100%}.live-data-filters button{width:100%}}
+
+
+/* Product improvements: legal, contact, scheme status and calculators */
+.site-footer{margin:2rem auto 1rem;padding:1.5rem;max-width:1400px;border-top:1px solid var(--border,#dbe5dc);display:flex;gap:1.25rem;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;color:var(--text-muted,#64748b);font-size:.9rem}
+.site-footer p{margin:.35rem 0;max-width:520px}
+.site-footer nav{display:flex;gap:.9rem;flex-wrap:wrap}
+.site-footer a,.auth-legal-note a{color:var(--primary,#216e4e);text-decoration:underline}
+.footer-disclaimer{width:100%;font-size:.8rem}
+.legal-page{max-width:850px;margin:2rem auto;padding:clamp(1rem,4vw,2.5rem);background:#fff;border:1px solid #e0e8e2;border-radius:18px;line-height:1.65;color:#26352d}
+.legal-page h1{color:#1f6b45}.legal-page h2{margin-top:1.5rem;color:#244e39}
+.legal-page label{display:block;margin:.8rem 0 .25rem;font-weight:600}
+.legal-page input,.legal-page select,.legal-page textarea{display:block;width:100%;padding:.7rem;border:1px solid #cbd5d0;border-radius:8px;margin-bottom:.5rem}
+.auth-legal-note{font-size:.83rem;margin:.8rem 0;color:var(--text-muted,#64748b)}
+.auth-legal-note label{display:flex;gap:.5rem;align-items:flex-start}
+.auth-legal-note input{width:auto;margin-top:.25rem}
+.scheme-updates-panel,.net-mandi-calculator,.pesticide-calculator{margin:1rem 0;padding:1.1rem;border:1px solid var(--border,#dbe5dc);border-radius:14px;background:#fff}
+.scheme-updates-panel{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.scheme-updates-panel h3,.net-mandi-calculator h3,.pesticide-calculator h3{margin:.1rem 0 .5rem}
+.calculator-result{margin-top:1rem;padding:1rem;background:#eff8f1;border:1px solid #c7e5ce;border-radius:10px;line-height:1.8}
+@media(max-width:700px){.legal-page{margin:.5rem;border-radius:10px}.site-footer{padding:1rem}.scheme-updates-panel{align-items:stretch}}

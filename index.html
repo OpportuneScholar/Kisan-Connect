@@ -6,16 +6,20 @@
   <title>Kisan Connect — Empowering Small and Marginal Farmers</title>
   <meta name="description" content="Integrated AgriTech platform empowering small & marginal farmers with direct APMC mandi prices, machinery pooling, AI crop doctor, and government subsidies." />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1f6b45" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
 </head>
 <body>
 
-  <!-- Top Emergency Helpline & Language Bar -->
+  <!-- Language and utility bar; no unverified helpline number is displayed. -->
   <header class="top-helpline-bar">
     <div class="helpline-content">
-      <span class="helpline-pill">KISAN HELPLINE</span>
-      <span data-i18n="helplineText">Kisan Call Centre (Toll-Free): 1551</span>
-      <a href="tel:1551" class="btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.76rem; background: #2D6A4F; color: #FFF; border: none;" data-i18n="emergencyCall">Call 1551</a>
+      <span class="helpline-pill">KISAN CONNECT</span>
+      <span data-i18n="topDescription">Farmer information, weather and market discovery</span>
     </div>
     <div class="top-bar-right">
       <div class="lang-select-wrapper">
@@ -26,6 +30,7 @@
           <option value="mr">मराठी (Marathi)</option>
           <option value="te">తెలుగు (Telugu)</option>
           <option value="bn">বাংলা (Bengali)</option>
+          <option value="ur">اردو (Urdu)</option>
         </select>
       </div>
     </div>
@@ -413,6 +418,15 @@
         </div>
       </div>
 
+      <div class="scheme-updates-panel">
+        <div>
+          <h3>🔔 Check for newly announced schemes</h3>
+          <p>We check the configured official scheme feed when available. Always verify eligibility and deadlines on the linked government portal.</p>
+          <p id="scheme-update-status" class="text-muted" aria-live="polite">Official updates have not been checked in this session.</p>
+        </div>
+        <button id="btn-check-scheme-updates" class="btn btn-outline" type="button">Check official updates</button>
+      </div>
+      <div id="scheme-live-updates" class="cards-grid-3"></div>
       <div id="schemes-cards-grid" class="cards-grid-3"></div>
     </div>
 
@@ -429,8 +443,10 @@
       </div>
       <div class="live-data-panel weather-location-panel">
         <form id="weather-location-form" class="live-data-filters">
-          <label>Village / town / city <input id="weather-location-input" name="location" value="Lucknow" required minlength="2" maxlength="100" /></label>
+          <label>Village / town / city (manual) <input id="weather-location-input" name="location" value="Lucknow" required minlength="2" maxlength="100" autocomplete="address-level2" /></label>
           <button class="btn btn-primary" type="submit">Update forecast</button>
+          <button class="btn btn-outline" id="weather-auto-detect" type="button">📍 Detect my location</button>
+          <span id="weather-location-status" role="status" aria-live="polite"></span>
           <button class="btn btn-outline" id="weather-speak-button" type="button">Listen in Hindi</button>
         </form>
         <div id="weather-current-summary" class="weather-current-summary" aria-live="polite">Loading current weather…</div>
@@ -827,16 +843,32 @@
           <label for="auth-password">Password</label>
           <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters" required />
         </div>
-        <p class="auth-demo-note">Your account is stored securely on the server. Use a unique password.</p>
+        <p class="auth-demo-note">Use a strong password you do not use on other websites. Kisan Connect will never display your password.</p>
+        <div class="auth-legal-note" id="auth-legal-consent" hidden>
+          <label><input id="auth-agree-terms" type="checkbox" /> I agree to the <a href="terms.html" target="_blank" rel="noopener">User Agreement</a> and acknowledge the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+        </div>
         <button class="btn btn-primary auth-submit" type="submit" id="auth-submit">Log in</button>
       </form>
       <p class="auth-switch-line"><span id="auth-switch-copy">New to Kisan Connect?</span> <button type="button" class="text-button" id="auth-switch">Create an account</button></p>
     </div>
   </div>
 
+  <footer class="site-footer">
+    <div><strong>Kisan Connect</strong><p>Independent farmer information prototype. Verify scheme details and market rates at official sources.</p></div>
+    <nav aria-label="Legal and contact links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">User Agreement</a>
+      <a href="contact.html">Contact Us</a>
+      <a href="https://www.data.gov.in/" target="_blank" rel="noopener">Government Open Data</a>
+    </nav>
+    <p class="footer-disclaimer">No government affiliation is implied. Kisan Connect does not guarantee crop prices, scheme eligibility or agricultural outcomes.</p>
+  </footer>
   <div id="kisan-toast" class="kisan-toast"></div>
 
   <!-- JavaScript Modules -->
+  <div id="google_translate_element" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
+  <script>function googleTranslateElementInit(){new google.translate.TranslateElement({pageLanguage:"en", includedLanguages:"en,hi,ur,pa,mr,te,bn", autoDisplay:false},"google_translate_element");}</script>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
   <script src="js/data.js"></script>
   <script src="js/mandi.js"></script>
   <script src="js/machinery.js"></script>
@@ -845,5 +877,11 @@
   <script src="js/farm-ledger.js"></script>
   <script src="js/app.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/improvements.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    }
+  </script>
 </body>
 </html>

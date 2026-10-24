@@ -11,10 +11,16 @@ const SchemesModule = {
   init() {
     this.renderSchemesList();
     this.setupListeners();
+    this.checkOfficialUpdates(false);
+    // Re-check every 6 hours while the app is open; actual feed coverage depends on SCHEME_FEED_URL.
+    if (!this._schemeRefreshTimer) this._schemeRefreshTimer = window.setInterval(() => this.checkOfficialUpdates(false), 6 * 60 * 60 * 1000);
     this.initEligibilityWizard();
   },
 
   setupListeners() {
+    const updateButton = document.getElementById("btn-check-scheme-updates");
+    if (updateButton) updateButton.addEventListener("click", () => this.checkOfficialUpdates(true));
+
     // Category pills
     const categoryBtns = document.querySelectorAll(".scheme-category-btn");
     categoryBtns.forEach(btn => {
@@ -34,6 +40,38 @@ const SchemesModule = {
         this.renderSchemesList();
       });
     }
+  },
+
+
+  async checkOfficialUpdates(manual = false) {
+    const status = document.getElementById("scheme-update-status");
+    const container = document.getElementById("scheme-live-updates");
+    if (!status || !container) return;
+    status.textContent = "Checking configured official scheme feed…";
+    try {
+      const response = await fetch("/api/schemes/updates", { headers: { "Accept": "application/json" } });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "Official update feed unavailable");
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      status.textContent = payload.message || `Checked at ${new Date().toLocaleString()}.`;
+      if (!items.length) {
+        container.innerHTML = `<div class="empty-state"><h3>No new scheme announcements returned</h3><p>This does not mean no new schemes exist. Check the official portals below.</p><p><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">myScheme.gov.in</a> · <a href="https://www.pib.gov.in/" target="_blank" rel="noopener">PIB</a> · <a href="https://www.india.gov.in/" target="_blank" rel="noopener">India.gov.in</a></p></div>`;
+        return;
+      }
+      container.innerHTML = items.map(item => `<article class="scheme-card"><h3>${this.escapeHtml(item.title || item.name || "Government scheme update")}</h3><p>${this.escapeHtml(item.summary || item.description || "Open the official source for details.")}</p><p class="text-muted">${this.escapeHtml(item.date || item.publishedAt || "")}</p><a class="btn btn-primary btn-sm" href="${this.safeUrl(item.url || item.link)}" target="_blank" rel="noopener">Open official notice ↗</a></article>`).join("");
+    } catch (error) {
+      status.textContent = "Live scheme feed is not configured or temporarily unavailable. Use the official portals below to verify new announcements.";
+      container.innerHTML = `<div class="empty-state"><p><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">myScheme.gov.in</a> · <a href="https://www.pib.gov.in/" target="_blank" rel="noopener">Press Information Bureau</a> · <a href="https://www.india.gov.in/" target="_blank" rel="noopener">India.gov.in</a></p></div>`;
+    }
+  },
+
+  escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  },
+
+  safeUrl(value) {
+    try { const u = new URL(value, location.origin); return ["https:", "http:"].includes(u.protocol) ? u.href : "https://www.myscheme.gov.in/"; }
+    catch { return "https://www.myscheme.gov.in/"; }
   },
 
   renderSchemesList() {
@@ -95,7 +133,7 @@ const SchemesModule = {
 
         <div class="scheme-card-footer">
           <div class="scheme-helpline">
-            <span>📞 Helpline: <strong>${s.helpline}</strong></span>
+            <span>Check eligibility and contact details on the official scheme portal.</span>
           </div>
           <div class="scheme-actions">
             <button class="btn btn-sm btn-outline" onclick="SchemesModule.openSchemeDetails('${s.id}')">
@@ -258,10 +296,10 @@ const SchemesModule = {
 
       <div class="scheme-modal-footer">
         <div class="helpline-contact">
-          <span>📞 Direct Scheme Helpline:</span>
-          <strong>${s.helpline}</strong>
+          <span>For current contact details, use the official scheme portal.</span>
         </div>
         <div class="modal-footer-btns">
+          <button class="btn btn-outline" onclick="window.print()">Print / Save PDF</button>
           <button class="btn btn-outline" onclick="App.closeModal('modal-scheme-detail')">Close</button>
           <a href="${s.portalUrl}" target="_blank" rel="noopener" class="btn btn-primary">
             Visit Official Govt Portal ↗

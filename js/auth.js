@@ -47,6 +47,10 @@ const Auth = {
     document.getElementById("auth-title").textContent = isRegister ? "Create your account" : "Welcome back";
     document.getElementById("auth-description").textContent = isRegister ? "Choose how you want to use Kisan Connect." : "Sign in to your Kisan Connect account.";
     document.getElementById("auth-name-group").hidden = !isRegister;
+    const legalConsent = document.getElementById("auth-legal-consent");
+    if (legalConsent) legalConsent.hidden = !isRegister;
+    const agreeTerms = document.getElementById("auth-agree-terms");
+    if (agreeTerms) { agreeTerms.required = isRegister; if (!isRegister) agreeTerms.checked = false; }
     document.getElementById("auth-name").required = isRegister;
     document.getElementById("auth-password").autocomplete = isRegister ? "new-password" : "current-password";
     document.getElementById("auth-password").minLength = isRegister ? 8 : 1;
@@ -54,7 +58,7 @@ const Auth = {
     document.getElementById("auth-submit").textContent = isRegister ? "Create account" : "Log in";
     document.getElementById("auth-switch-copy").textContent = isRegister ? "Already registered?" : "New to Kisan Connect?";
     document.getElementById("auth-switch").textContent = isRegister ? "Log in" : "Create an account";
-    document.querySelector(".auth-demo-note").textContent = "Your account is stored securely on the server. Use a unique password.";
+    document.querySelector(".auth-demo-note").textContent = "Use a strong password you do not use on other websites. Kisan Connect will never display your password.";
     document.getElementById("auth-modal").classList.add("active");
     document.getElementById("auth-modal").setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -62,6 +66,10 @@ const Auth = {
 
   async submit(event) {
     event.preventDefault();
+    if (this.mode === "register" && !document.getElementById("auth-agree-terms")?.checked) {
+      window.App?.showToast?.("Please accept the User Agreement and Privacy Policy to create an account.");
+      return;
+    }
     const button = document.getElementById("auth-submit");
     button.disabled = true;
     const body = {

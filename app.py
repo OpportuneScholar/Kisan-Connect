@@ -494,6 +494,71 @@ def submit_mandi_report(body: MandiReportBody, user: User = Depends(require_role
     return {"ok": True, "message": "Price report submitted. It will contribute to a community average after enough recent reports are available."}
 
 
+
+
+class CropDoctorBody(BaseModel):
+    imageBase64: str = Field(min_length=100, max_length=11_200_000)
+    mimeType: Literal["image/jpeg", "image/png", "image/webp"] = "image/jpeg"
+    crop: str = Field(default="", max_length=100)
+
+@app.post("/api/crop-doctor/analyze")
+def crop_doctor_analyze(body: CropDoctorBody):
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="AI Crop Doctor is not configured yet. Set GEMINI_API_KEY on the server.")
+    if len(body.imageBase64) > 11_000_000:
+        raise HTTPException(status_code=413, detail="Image is too large. Upload a smaller image (maximum 8 MB).")
+    try:
+        prompt = (
+            "You are a cautious agricultural crop-health assistant. Inspect this plant image. "
+            "Return JSON with fields: observations, possibleCauses (array), confidence (low/medium/high), "
+            "safeNextSteps (array), whenToContactExpert. Do not prescribe pesticide dosage or claim certainty. "
+            "Ask for a clearer photo if needed. Crop context: " + (body.crop or "not specified")
+        )
+        payload = {"contents":[{"parts":[{"text":prompt},{"inline_data":{"mime_type":body.mimeType,"data":body.imageBase64}}]}],
+                   "generationConfig":{"responseMimeType":"application/json","temperature":0.2}}
+        endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + urllib.parse.quote(api_key)
+        req = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Content-Type":"application/json"}, method="POST")
+        with urllib.request.urlopen(req, timeout=35) as response:
+            result = json.loads(response.read().decode())
+        candidates = result.get("candidates") or []
+        parts = ((candidates[0].get("content") or {}).get("parts") or []) if candidates else []
+        raw = next((part.get("text") for part in parts if part.get("text")), "")
+        if not raw:
+            raise ValueError("No analysis returned")
+        parsed = json.loads(raw)
+        return {"source":"Gemini Vision","disclaimer":"AI suggestions can be wrong. Confirm diagnosis with a qualified agricultural expert; follow only approved product labels.","analysis":parsed}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="The vision service could not analyse this image right now. Please retry or contact a local agricultural expert.")
+
+@app.get("/api/schemes/updates")
+def scheme_updates():
+    """Read a configured official JSON feed; without it, return no invented announcements."""
+    feed_url = os.getenv("SCHEME_FEED_URL", "").strip()
+    if not feed_url:
+        return {"source":"official_portals","items":[],"checkedAt":datetime.now(timezone.utc).isoformat(),
+                "message":"No official JSON scheme feed is configured. No new schemes are being invented; check myScheme.gov.in, PIB and India.gov.in for current announcements."}
+    if not feed_url.startswith("https://"):
+        raise HTTPException(status_code=500, detail="SCHEME_FEED_URL must use HTTPS.")
+    try:
+        payload = _http_json(feed_url, timeout=15)
+        records = payload.get("items") or payload.get("records") or payload.get("results") or []
+        items=[]
+        for item in records[:50]:
+            title=str(item.get("title") or item.get("name") or "").strip()[:240]
+            url=str(item.get("url") or item.get("link") or "").strip()
+            if not title or not url.startswith("https://"):
+                continue
+            items.append({"title":title,"summary":str(item.get("summary") or item.get("description") or "")[:1000],
+                          "date":str(item.get("date") or item.get("publishedAt") or "")[:80],"url":url})
+        return {"source":"configured_official_feed","items":items,"checkedAt":datetime.now(timezone.utc).isoformat(),
+                "message":f"Checked the configured feed. {len(items)} item(s) returned; verify each announcement on its official portal."}
+    except Exception:
+        raise HTTPException(status_code=502, detail="The configured official scheme feed is temporarily unavailable.")
+
+
 app.mount("/css", StaticFiles(directory=ROOT / "css"), name="css")
 app.mount("/js", StaticFiles(directory=ROOT / "js"), name="js")
 

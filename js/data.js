@@ -1025,6 +1025,14 @@ const KISAN_DATA = {
       mspAbove: "সরকারি সহায়ক মূল্যের বেশি",
       mspBelow: "সহায়ক মূল্যের কম - সতর্কবার্তা!",
       poolingBenefit: "প্রতিবেশী কৃষকদের সাথে মিলে ৩৫% সাশ্রয় করুন"
+    },
+    ur: {
+      appName: "کسان کنیکٹ", appTagline: "چھوٹے اور پسماندہ کسانوں کا ساتھی",
+      navMandi: "کسان منڈی", navMachinery: "زرعی مشینری کرایہ", navDoctor: "اے آئی فصل ڈاکٹر",
+      navSchemes: "سرکاری اسکیمیں", navWeather: "موسم اور مشورہ", navLedger: "کھاتہ", navCommunity: "کسان چوپال",
+      searchPlaceholder: "فصل، منڈی، مشینری یا اسکیم تلاش کریں...", btnListProduce: "فصل درج کریں",
+      btnRentEquipment: "مشین کرائے پر لیں", btnDiagnoseCrop: "فصل کی جانچ کریں", btnCheckSchemes: "اہلیت چیک کریں",
+      topDescription: "کسانوں کی معلومات، موسم اور منڈی کی تلاش"
     }
   }
 };

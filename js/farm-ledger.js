@@ -136,6 +136,27 @@ const FarmLedgerModule = {
       event.preventDefault();
       this.renderWeatherForecast();
     });
+    document.getElementById("weather-auto-detect")?.addEventListener("click", async () => {
+      const status = document.getElementById("weather-location-status");
+      const input = document.getElementById("weather-location-input");
+      if (!navigator.geolocation) { if (status) status.textContent = "This browser does not support location detection. Enter your village or city manually."; return; }
+      if (status) status.textContent = "Requesting location permission…";
+      navigator.geolocation.getCurrentPosition(async position => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&language=en&format=json`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Location lookup failed");
+          const data = await response.json();
+          const place = data.results?.[0];
+          if (!place) throw new Error("Could not identify a nearby village or town");
+          const label = [place.name, place.admin1, place.country].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+          input.value = label;
+          if (status) status.textContent = `Detected: ${label}. Updating forecast…`;
+          this.renderWeatherForecast();
+        } catch (error) { if (status) status.textContent = `${error.message}. Please enter your location manually.`; }
+      }, error => { if (status) status.textContent = `${error.code === 1 ? "Location permission denied" : "Could not detect location"}. Enter your village or city manually.`; }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+    });
     document.getElementById("weather-speak-button")?.addEventListener("click", () => {
       const summary = document.getElementById("weather-current-summary")?.dataset.speech;
       if (!summary || !("speechSynthesis" in window)) {

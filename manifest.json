@@ -1,0 +1,11 @@
+{
+  "name": "Kisan Connect",
+  "short_name": "Kisan Connect",
+  "description": "Farmer weather, mandi information and agricultural resources.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7faf7",
+  "theme_color": "#1f6b45",
+  "icons": [{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

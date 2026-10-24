@@ -307,7 +307,7 @@ const AIDoctorModule = {
       return "📊 **Mandi Price Intelligence**: Wheat is currently trading at ₹2,480/Qtl (above MSP ₹2,275). Mustard is strong at ₹5,850/Qtl. Soybean is trading soft at ₹4,420 (below MSP ₹4,600 - hold if you have safe storage). Check the **Kisan Mandi** tab for live rates.";
     }
 
-    return "🧑‍🌾 **Kisan Sahayak Advice**: For your query regarding '" + query + "', we recommend consulting with your local Krishi Vigyan Kendra (KVK) or calling the **Kisan Call Centre at 1551 (Toll-Free)**. You can also explore our **Mandi**, **Machinery Pooling**, and **Govt Schemes** tabs for direct assistance!";
+    return "🧑‍🌾 **Kisan Sahayak Advice**: For your query regarding '" + query + "', we recommend consulting with your local Krishi Vigyan Kendra (KVK) or contacting your nearest Krishi Vigyan Kendra (KVK). You can also explore our **Mandi**, **Machinery Pooling**, and **Govt Schemes** tabs for direct assistance!";
   },
 
   appendUserMessage(text) {

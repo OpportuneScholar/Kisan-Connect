@@ -3,7 +3,7 @@
 
 **Kisan Connect** is a mobile-friendly AgriTech web prototype that brings together produce listings, mandi information, farm equipment, crop-health references, government schemes, weather guidance, farm-cost tracking, and farmer discussions.
 
-**Current status:** this ZIP is a frontend prototype. Mandi and weather values include sample data, uploaded crop photos are not analysed by a real AI model, demo accounts are stored in the current browser, and listings are not shared with a server or other users. Do not use the sample values as live market or agricultural advice.
+**Current status:** this ZIP contains a working web prototype with a FastAPI backend. Weather and configured mandi routes can request external data; some existing catalogue cards remain illustrative. The AI Crop Doctor requires `GEMINI_API_KEY`; official mandi rates require `DATA_GOV_IN_API_KEY`. Without credentials, those features report that they are not configured rather than pretending to be live.
 ---
 
 **Backend status:** FastAPI now provides server-side registration/login, password hashing, HttpOnly session cookies, role checks, persistent produce listings, buyer enquiries, and an admin summary endpoint. PostgreSQL is supported through `DATABASE_URL`. If it is not set, local development uses a SQLite file; this fallback is not the recommended multi-user deployment database.
@@ -173,3 +173,28 @@ Kisan Connect/
 
 ### Deploy environment variables
 Set `DATA_GOV_IN_API_KEY` in the hosting dashboard's secret/environment-variable settings. Keep `DATABASE_URL` and all credentials out of source control. The app cannot return official mandi records until a valid data.gov.in API key is configured and the upstream API is accessible.
+
+
+## Product improvements in this build
+
+- PWA shell: `manifest.json` and `sw.js` enable installability and cache the app shell. Live API responses are not cached as offline facts.
+- Voice search: the existing `#btn-voice-search` uses the browser Web Speech API where supported; microphone support and Hindi recognition vary by browser/device.
+- Net Mandi Profit Calculator: calculates sale proceeds minus entered logistics and selling costs.
+- Label-based dosage calculator: scales a dose the user reads from the registered product label. It does **not** recommend products or invent a dosage.
+- AI Crop Doctor endpoint: `POST /api/crop-doctor/analyze` calls Gemini Vision only when `GEMINI_API_KEY` is configured on the server. Without a key it returns a clear 503, not a fake diagnosis. AI output is not a substitute for an agricultural expert.
+- Scheme update check: `GET /api/schemes/updates` reads a configured HTTPS JSON feed (`SCHEME_FEED_URL`). Without a configured feed, it links to official portals and clearly states that automated feed monitoring is not configured. The app cannot guarantee detection of every newly announced scheme.
+- Privacy Policy, User Agreement and Contact Us pages are included. Account creation requires agreement to the terms. Contact form prepares/copies a message; configure a monitored support inbox before public launch.
+- Scheme details can be printed / saved to PDF from the browser.
+
+## Required production work before claiming every feature is live
+
+1. **Phone OTP authentication is not enabled in this build.** Current server authentication is email/password. Switching to phone OTP requires a verified SMS/OTP provider, database migration to store verified phone identities, rate limiting, recovery flow and testing. Do not remove the existing sign-in path until this is implemented and tested.
+2. **WhatsApp alerts are not active.** They require a Meta WhatsApp Business Platform setup, verified sender, user opt-in/consent, approved templates where required, and secret configuration. Do not send messages without consent.
+3. **Automatic scheme monitoring requires a trustworthy official feed.** Configure `SCHEME_FEED_URL` with an official HTTPS JSON feed that returns `items`, `records` or `results`; each record should include `title` and official `url`/`link`. Refresh occurs when users open the schemes area and every 6 hours while the page remains open. There is no background scheduler in a closed browser.
+4. **Deployment:** set `COOKIE_SECURE=true` behind HTTPS; configure PostgreSQL, `GEMINI_API_KEY`, and any official feed URL on the host; never commit secrets. A production security review, backup policy and contact inbox are still required.
+5. **Pesticide safety:** calculator results only scale a label-entered dose. Verify product label, crop registration, PPE and pre-harvest interval.
+
+### New environment variables
+
+- `GEMINI_API_KEY` — optional Gemini Vision access for Crop Doctor.
+- `SCHEME_FEED_URL` — optional official HTTPS JSON scheme feed.
