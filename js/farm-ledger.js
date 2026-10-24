@@ -144,13 +144,15 @@ const FarmLedgerModule = {
       navigator.geolocation.getCurrentPosition(async position => {
         try {
           const { latitude, longitude } = position.coords;
-          const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&language=en&format=json`;
-          const response = await fetch(url);
-          if (!response.ok) throw new Error("Location lookup failed");
-          const data = await response.json();
-          const place = data.results?.[0];
-          if (!place) throw new Error("Could not identify a nearby village or town");
-          const label = [place.name, place.admin1, place.country].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(", ");
+          
+const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+const response = await fetch(url);
+if (!response.ok) throw new Error(`Location lookup failed (${response.status})`);
+const place = await response.json();
+const locality = place.locality || place.city || place.localityInfo?.administrative?.[0]?.name;
+if (!locality) throw new Error("Could not identify a nearby village or town");
+const label = [locality, place.principalSubdivision, place.countryName].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).join(", ");
+
           input.value = label;
           if (status) status.textContent = `Detected: ${label}. Updating forecast…`;
           this.renderWeatherForecast();
