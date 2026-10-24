@@ -19,9 +19,25 @@ from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Te
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 ROOT = Path(__file__).resolve().parent
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./kisan_connect_dev.db")
+
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://", "postgresql+psycopg://", 1
+    )
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgresql://", "postgresql+psycopg://", 1
+    )
+
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if IS_SQLITE else {}, pool_pre_ping=True)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if IS_SQLITE else {},
+    pool_pre_ping=True,
+)
+
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 SESSION_COOKIE = "kisan_session"
 SESSION_DAYS = int(os.getenv("SESSION_DAYS", "7"))
