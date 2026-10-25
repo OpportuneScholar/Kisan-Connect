@@ -9,6 +9,7 @@ const App = {
   currentLang: "hi",
 
   init() {
+    this.detectInstalledAppMode();
     this.loadSavedLanguage();
     this.setupTabs();
     this.setupModals();
@@ -27,6 +28,11 @@ const App = {
     if (hash && document.getElementById(hash)) {
       this.switchTab(hash);
     }
+  },
+
+  detectInstalledAppMode() {
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    document.body.classList.toggle("pwa-installed", Boolean(standalone));
   },
 
   loadSavedLanguage() {
