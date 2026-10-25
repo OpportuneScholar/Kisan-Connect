@@ -273,7 +273,12 @@ const MandiModule = {
         marketList.replaceChildren(...marketNames.map(name => new Option(name, name)));
       }
       if (!data.items || !data.items.length) {
-        results.innerHTML = `<p class="text-sm text-muted">${this.escapeHTML(data.message || "No recent records found for these filters.")}</p><p class="live-data-source-note">For official rates, configure DATA_GOV_IN_API_KEY in the server environment. <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a>.</p>`;
+        const setupHint = data.officialStatus === "not_configured"
+          ? ' <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a> and add it to the server environment.'
+          : data.officialStatus === "temporarily_unavailable"
+            ? " The official feed is configured but is temporarily unavailable; please retry later."
+            : " Try clearing the mandi name or changing the crop/district to find matching official records.";
+        results.innerHTML = `<p class="text-sm text-muted">${this.escapeHTML(data.message || "No recent records found for these filters.")}</p><p class="live-data-source-note">${setupHint}</p>`;
         return;
       }
       const official = data.mode === "official";
