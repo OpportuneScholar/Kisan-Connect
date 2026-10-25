@@ -521,6 +521,8 @@ def mandi_prices(commodity: str = "", state: str = "", district: str = "", marke
     message = "Community averages appear only after at least 3 distinct accounts report the same crop and market within the last 3 days. These are not official prices."
     if official_status == "temporarily_unavailable":
         message += " The government data provider is currently unavailable; showing community reports only."
+    elif official_status == "no_matching_records":
+        message += " The official feed responded, but no government records matched these filters. Try a different crop, district, or mandi."
     else:
         message += " Configure DATA_GOV_IN_API_KEY to enable official AGMARKNET records."
     return {"source": "Community reports", "mode": "community", "officialStatus": official_status, "items": averages[:limit], "updatedAt": datetime.now(timezone.utc).isoformat(), "message": message}
