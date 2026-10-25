@@ -9,10 +9,142 @@ const MachineryModule = {
   searchQuery: "",
   maxDistance: 20,
 
+  communityListings: [],
+  _communityListenersReady: false,
+
+  escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+  },
+
+  async loadCommunityListings() {
+    const status = document.getElementById("community-machinery-status");
+    const container = document.getElementById("community-machinery-listings");
+    if (!container) return;
+    if (status) status.textContent = "Loading farmer-listed machines…";
+    try {
+      const response = await fetch("/api/machinery/listings", { credentials: "same-origin" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Could not load farmer listings.");
+      this.communityListings = data.items || [];
+      this.renderCommunityListings();
+      if (status) status.textContent = this.communityListings.length
+        ? "Database listings from farmers"
+        : "No farmer-listed machines yet. Farmers can publish the first listing.";
+    } catch (_) {
+      if (status) status.textContent = "Farmer listings could not be loaded. Please retry when the connection is available.";
+    }
+  },
+
+  renderCommunityListings() {
+    const container = document.getElementById("community-machinery-listings");
+    if (!container) return;
+    const query = (this.searchQuery || "").toLowerCase();
+    const items = this.communityListings.filter(item =>
+      (!query || [item.name, item.category, item.location, item.description, item.ownerName].some(value => String(value || "").toLowerCase().includes(query)))
+    );
+    if (!items.length) {
+      container.innerHTML = '<p class="text-sm text-muted">No matching farmer listings found.</p>';
+      return;
+    }
+    container.innerHTML = items.map(item => {
+      const name = this.escapeHTML(item.name);
+      const category = this.escapeHTML(item.category);
+      const location = this.escapeHTML(item.location);
+      const description = this.escapeHTML(item.description || "No additional details supplied.");
+      const owner = this.escapeHTML(item.ownerName || "Registered farmer");
+      const phone = this.escapeHTML(item.phone || "");
+      const acreRate = Number(item.ratePerAcre) > 0 ? "₹" + Number(item.ratePerAcre).toLocaleString("en-IN") + " / acre" : "";
+      const hourRate = Number(item.ratePerHour) > 0 ? "₹" + Number(item.ratePerHour).toLocaleString("en-IN") + " / hour" : "";
+      const rates = [acreRate, hourRate].filter(Boolean).map(rate => "<strong>" + rate + "</strong>").join("");
+      return '<article class="machine-card community-machine-card">' +
+        '<div class="machine-badges"><span class="badge badge-category">' + category + '</span><span class="badge badge-neutral">Farmer listing</span></div>' +
+        '<h3 class="machine-title">' + name + '</h3><p class="machine-desc">' + description + '</p>' +
+        '<p class="text-sm text-muted">Location: ' + location + '</p><p class="text-sm text-muted">Owner: ' + owner + '</p>' +
+        '<div class="community-machine-rates">' + rates + '</div>' +
+        '<p class="text-sm text-muted">' + (item.operatorIncluded ? "Operator included" : "Operator not included") + ' · ' + (item.fuelIncluded ? "Fuel included" : "Fuel not included") + '</p>' +
+        '<div class="machine-card-actions"><a class="btn btn-sm btn-outline" href="tel:' + phone + '">Contact owner</a>' +
+        '<button type="button" class="btn btn-sm btn-primary" onclick="MachineryModule.openCommunityRental(' + Number(item.id) + ')">Request rental</button></div></article>';
+    }).join("");
+  },
+
+  setupCommunityListingListeners() {
+    if (this._communityListenersReady) return;
+    this._communityListenersReady = true;
+    document.getElementById("btn-list-machinery")?.addEventListener("click", async () => {
+      if (!window.Auth || !(await window.Auth.ensureRole("farmer", "Log in as a farmer to list your machine."))) return;
+      if (window.App) window.App.openModal("modal-list-machinery");
+    });
+    document.getElementById("machinery-listing-form")?.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!window.Auth || !(await window.Auth.ensureRole("farmer", "Log in as a farmer to list your machine."))) return;
+      const form = event.currentTarget;
+      const values = Object.fromEntries(new FormData(form).entries());
+      values.ratePerAcre = Number(values.ratePerAcre || 0);
+      values.ratePerHour = Number(values.ratePerHour || 0);
+      values.operatorIncluded = document.getElementById("machine-list-operator").checked;
+      values.fuelIncluded = document.getElementById("machine-list-fuel").checked;
+      if (values.ratePerAcre <= 0 && values.ratePerHour <= 0) {
+        if (window.App) window.App.showToast("Enter a rental rate per acre or per hour.");
+        return;
+      }
+      const submit = document.getElementById("machine-list-submit");
+      if (submit) { submit.disabled = true; submit.textContent = "Publishing…"; }
+      try {
+        const response = await fetch("/api/machinery/listings", {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify(values)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.detail || "Could not publish the machine listing.");
+        form.reset();
+        if (window.App) { window.App.closeModal("modal-list-machinery"); window.App.showToast("Machine listing saved. Other users can now find it."); }
+        await this.loadCommunityListings();
+      } catch (error) {
+        if (window.App) window.App.showToast(error.message || "Could not connect to the server.");
+      } finally {
+        if (submit) { submit.disabled = false; submit.textContent = "Publish listing"; }
+      }
+    });
+    document.getElementById("community-machinery-rent-form")?.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!window.Auth || !(await window.Auth.ensureRole(["farmer", "localBuyer", "bulkBuyer"], "Log in to request a machine rental."))) return;
+      const form = event.currentTarget;
+      const listingId = Number(document.getElementById("community-rental-listing-id").value);
+      const values = Object.fromEntries(new FormData(form).entries());
+      values.acres = Number(values.acres);
+      try {
+        const response = await fetch("/api/machinery/listings/" + listingId + "/rentals", {
+          method: "POST", credentials: "same-origin",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify(values)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.detail || "Could not send rental request.");
+        form.reset();
+        if (window.App) { window.App.closeModal("modal-rent-community-machine"); window.App.showToast(data.message || "Rental request sent."); }
+      } catch (error) {
+        if (window.App) window.App.showToast(error.message || "Could not connect to the server.");
+      }
+    });
+  },
+
+  openCommunityRental(listingId) {
+    const item = this.communityListings.find(listing => Number(listing.id) === Number(listingId));
+    if (!item) return;
+    document.getElementById("community-rental-listing-id").value = item.id;
+    document.getElementById("community-rental-machine-summary").innerHTML =
+      '<div class="booking-summary-banner"><div><h4>' + this.escapeHTML(item.name) + '</h4><p class="text-sm text-muted">' +
+      this.escapeHTML(item.location) + ' · Owner: ' + this.escapeHTML(item.ownerName) + '</p></div></div>';
+    const dateInput = document.getElementById("community-rental-date");
+    if (dateInput) dateInput.min = new Date().toISOString().slice(0, 10);
+    if (window.App) window.App.openModal("modal-rent-community-machine");
+  },
+
   init() {
     this.renderMachineryList();
     this.setupListeners();
     this.initPoolingCalculator();
+    this.setupCommunityListingListeners();
+    this.loadCommunityListings();
   },
 
   setupListeners() {
@@ -44,6 +176,7 @@ const MachineryModule = {
       searchInput.addEventListener("input", (e) => {
         this.searchQuery = e.target.value.toLowerCase().trim();
         this.renderMachineryList();
+        this.renderCommunityListings();
       });
     }
 
