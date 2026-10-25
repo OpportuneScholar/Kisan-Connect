@@ -623,7 +623,7 @@ def mandi_markets(state: str = "", district: str = "", q: str = "", db: Session 
 
 
 @app.post("/api/mandi/reports", status_code=201)
-def submit_mandi_report(body: MandiReportBody, user: User = Depends(require_roles("farmer", "bulkBuyer")), db: Session = Depends(get_db)):
+def submit_mandi_report(body: MandiReportBody, user: User = Depends(require_roles("farmer", "bulkBuyer", "localBuyer")), db: Session = Depends(get_db)):
     clean = lambda value: " ".join(value.strip().split())
     commodity, market, district, state = (clean(body.commodity), clean(body.market), clean(body.district), clean(body.state))
     # Save each new market once. Later users can autocomplete the same canonical name.
