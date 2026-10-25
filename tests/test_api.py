@@ -110,6 +110,27 @@ class MarketplaceApiTests(unittest.TestCase):
         self.assertEqual(result.json()["items"][0]["reportCount"], 3)
         self.assertEqual(result.json()["items"][0]["averagePrice"], 2400)
 
+
+    def test_mandi_market_list_uses_official_state_district_records(self):
+        from unittest.mock import patch
+        rows = [
+            {"commodity": "Wheat", "market": "Lucknow", "district": "Lucknow", "state": "Uttar Pradesh",
+             "arrivalDate": "24/10/2026", "minPrice": 2300, "maxPrice": 2500, "modalPrice": 2400},
+            {"commodity": "Rice", "market": "Mohanlalganj", "district": "Lucknow", "state": "Uttar Pradesh",
+             "arrivalDate": "24/10/2026", "minPrice": 2000, "maxPrice": 2200, "modalPrice": 2100},
+        ]
+        with patch.object(api, "_gov_mandi_prices", return_value=rows):
+            response = self.client.get("/api/mandi/markets?state=Uttar%20Pradesh&district=Lucknow")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["items"], ["Lucknow", "Mohanlalganj"])
+
+    def test_data_gov_state_filter_uses_keyword_field(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"DATA_GOV_IN_API_KEY": "test-key"}), patch.object(api, "_http_json", return_value={"records": []}) as request:
+            api._gov_mandi_prices("Wheat", "Uttar Pradesh", "Lucknow", "", 10)
+        url = request.call_args.args[0]
+        self.assertIn("filters%5Bstate.keyword%5D=Uttar+Pradesh", url)
+
     def test_anonymous_user_cannot_publish_listing(self):
         response = self.client.post("/api/marketplace/listings", json={
             "farmerName": "Anonymous", "phone": "9876543210", "crop": "Rice",
