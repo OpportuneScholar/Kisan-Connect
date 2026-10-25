@@ -181,6 +181,7 @@ const MandiModule = {
         this.loadMandiMarkets();
       });
       reportState?.addEventListener("change", () => {
+        populateDistricts(reportDistrict, reportState.value);
         syncLiveFromReport();
         resetMarkets();
         this.loadMandiMarkets();
@@ -298,6 +299,7 @@ const MandiModule = {
       const district = (state.districts || []).find(item => item.name.toLowerCase() === districtName.toLowerCase() || item.name.toLowerCase().includes(districtName.toLowerCase()) || districtName.toLowerCase().includes(item.name.toLowerCase()));
       if (district) districtSelect.value = district.name;
       else if (districtName) { districtSelect.add(new Option(districtName, districtName)); districtSelect.value = districtName; }
+      districtSelect.dispatchEvent(new Event("change", { bubbles: true }));
       setStatus(`Detected: ${[locality, districtName || district?.name, state.name].filter(Boolean).join(", ")}. Select a crop and choose a mandi from available suggestions.`);
       await this.loadLivePrices();
     } catch (error) {
