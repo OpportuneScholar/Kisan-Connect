@@ -141,8 +141,7 @@
             <select id="live-mandi-district" autocomplete="address-level2" disabled><option value="">Select state first</option></select>
           </label>
           <label>Market / Mandi
-            <input id="live-mandi-market" type="text" list="india-market-list" placeholder="Choose suggestion or type mandi" autocomplete="off" />
-            <datalist id="india-market-list"></datalist>
+            <select id="live-mandi-market"><option value="">Choose state and district first</option></select>
           </label>
           <button id="btn-detect-mandi-location" class="btn btn-outline" type="button">📍 Detect location</button>
           <button id="btn-load-live-mandi" class="btn btn-primary" type="button">Find rates</button>
@@ -152,10 +151,10 @@
           <summary>Submit a local price report</summary>
           <p class="text-sm text-muted">For farmers and bulk buyers. Community reports are not official prices and are only averaged after three recent reports for the same market and crop.</p>
           <form id="mandi-price-report-form" class="live-data-filters">
-            <label>Crop <input name="commodity" required minlength="2" maxlength="120" /></label>
-            <label>Mandi / market <input name="market" required minlength="2" maxlength="180" /></label>
-            <label>District <input name="district" required minlength="2" maxlength="120" /></label>
-            <label>State <input name="state" required minlength="2" maxlength="120" /></label>
+            <label>Crop <input name="commodity" id="report-mandi-commodity" required minlength="2" maxlength="120" list="india-crops-list" /></label>
+            <label>Mandi / market <select name="market" id="report-mandi-market" required><option value="">Choose state and district first</option></select></label>
+            <label>District <select name="district" id="report-mandi-district" required disabled><option value="">Select state first</option></select></label>
+            <label>State <select name="state" id="report-mandi-state" required><option value="">Loading states…</option></select></label>
             <label>Price (₹/quintal) <input name="pricePerQuintal" type="number" min="1" max="1000000" step="0.01" required /></label>
             <label>Note (optional) <input name="note" maxlength="300" /></label>
             <button class="btn btn-outline" type="submit">Submit report</button>
