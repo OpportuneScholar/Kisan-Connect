@@ -672,6 +672,20 @@ def create_machinery_listing(body: MachineryListingBody, user: User = Depends(re
         "createdAt": item.created_at.isoformat() if item.created_at else None}}
 
 
+@app.get("/api/machinery/rentals/incoming")
+def incoming_machinery_rentals(user: User = Depends(require_roles("farmer")), db: Session = Depends(get_db)):
+    rows = db.execute(
+        select(MachineryRentalRequest, MachineryListing, User)
+        .join(MachineryListing, MachineryRentalRequest.listing_id == MachineryListing.id)
+        .join(User, MachineryRentalRequest.requester_id == User.id)
+        .where(MachineryListing.owner_id == user.id)
+        .order_by(MachineryRentalRequest.created_at.desc())
+    ).all()
+    return {"items": [{"id": rental.id, "listingId": listing.id, "machineName": listing.name,
+        "requesterName": requester.name, "phone": rental.phone, "requestedDate": rental.requested_date,
+        "acres": rental.acres, "message": rental.message, "status": rental.status,
+        "createdAt": rental.created_at.isoformat() if rental.created_at else None}
+        for rental, listing, requester in rows]}
 @app.post("/api/machinery/listings/{listing_id}/rentals", status_code=201)
 def request_machinery_rental(listing_id: int, body: MachineryRentalBody, user: User = Depends(require_roles("farmer", "localBuyer", "bulkBuyer")), db: Session = Depends(get_db)):
     item = db.get(MachineryListing, listing_id)
