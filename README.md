@@ -198,3 +198,16 @@ Set `DATA_GOV_IN_API_KEY` in the hosting dashboard's secret/environment-variable
 
 - `GEMINI_API_KEY` — optional Gemini Vision access for Crop Doctor.
 - `SCHEME_FEED_URL` — optional official HTTPS JSON scheme feed.
+
+
+## Production setup on Voroa
+
+Open the existing Kisan Connect service's environment-variable settings in Voroa. Add these variables there (not in frontend JavaScript and not in a committed `.env` file):
+
+- `PUBLIC_ORIGIN=https://kisan-connect.getvoroa.com` — ensures the same-origin security check recognizes the public HTTPS site when the hosting proxy uses an internal URL.
+- `COOKIE_SECURE=true` — required for session cookies on HTTPS.
+- `DATABASE_URL` — use the PostgreSQL connection URL supplied by the production database. If this is missing, the app falls back to a local SQLite file, which is not suitable for persistent multi-instance production hosting.
+- `DATA_GOV_IN_API_KEY` — optional key from [data.gov.in](https://data.gov.in/) to enable official AGMARKNET mandi price records. Keep `AGMARKNET_RESOURCE_ID=9ef84268-d588-465a-a308-a864a43d0070` unless the official dataset resource changes.
+- `GEMINI_API_KEY` — optional key from [Google AI Studio](https://aistudio.google.com/app/apikey) for the AI Crop Doctor.
+
+Weather forecasts use Open-Meteo and do not require an API key. Mandi location detection uses browser geolocation plus reverse geocoding, so it requires HTTPS and the visitor's permission, not a secret key. After adding/changing variables, save and redeploy/restart the Voroa service. Verify `/api/health` and test account registration, login, official mandi prices, and crop-image analysis. Never paste secret API keys into chat or GitHub.
