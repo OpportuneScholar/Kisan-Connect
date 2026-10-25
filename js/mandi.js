@@ -192,9 +192,22 @@ const MandiModule = {
         place = { locality: address.village || address.town || address.city || address.suburb || "", principalSubdivision: address.state || "", district: address.county || address.state_district || "" };
       }
       const administrative = place.localityInfo?.administrative || [];
-      const stateName = place.principalSubdivision || place.state || "";
-      const districtName = place.district || administrative.find(item => /district|county/i.test(item.description || ""))?.name || "";
-      const locality = place.locality || place.city || "";
+      let stateName = place.principalSubdivision || place.state || "";
+      let districtName = place.district || administrative.find(item => /district|county/i.test(item.description || ""))?.name || "";
+      let locality = place.locality || place.city || "";
+      if (!districtName) {
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`, { signal: AbortSignal.timeout(9000) });
+          if (response.ok) {
+            const address = (await response.json()).address || {};
+            districtName = address.county || address.state_district || "";
+            stateName = stateName || address.state || "";
+            locality = locality || address.village || address.town || address.city || address.suburb || "";
+          }
+        } catch (_) {
+          // Keep the primary reverse-geocoding result and allow manual selection.
+        }
+      }
       if (!stateName) throw new Error("Could not identify your state. Please select it manually.");
       const state = (this.indiaAdminDivisions || []).find(item => item.name.toLowerCase() === stateName.toLowerCase() || item.name.toLowerCase().includes(stateName.toLowerCase()));
       if (!state) throw new Error(`Detected state: ${stateName}. Please select it manually from the list.`);
