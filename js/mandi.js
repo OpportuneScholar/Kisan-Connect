@@ -316,7 +316,7 @@ const MandiModule = {
     document.getElementById("btn-detect-mandi-location")?.addEventListener("click", () => this.detectMandiLocation());
     document.getElementById("mandi-price-report-form")?.addEventListener("submit", async event => {
       event.preventDefault();
-      if (!window.Auth || !(await window.Auth.ensureRole(["farmer", "bulkBuyer"], "Log in as a farmer or bulk buyer to submit a market report."))) return;
+      if (!window.Auth || !(await window.Auth.ensureRole(["farmer", "bulkBuyer", "localBuyer"], "Log in to submit a community mandi price report."))) return;
       const form = event.currentTarget;
       const values = Object.fromEntries(new FormData(form).entries());
       values.pricePerQuintal = Number(values.pricePerQuintal);
