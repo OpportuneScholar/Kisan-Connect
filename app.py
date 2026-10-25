@@ -185,17 +185,20 @@ def enforce_same_origin(request: Request):
         return
 
     parsed_origin = urllib.parse.urlsplit(origin)
-    # A reverse proxy may expose an internal upstream Host to the application.
-    forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
-    expected_host = forwarded_host or request.headers.get("host", "")
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
-    expected_scheme = forwarded_proto or request.url.scheme
+    # Optional explicit public URL is the most reliable setting on managed reverse proxies.
+    public_origin = os.getenv("PUBLIC_ORIGIN", "").strip().rstrip("/")
+    if public_origin:
+        expected = urllib.parse.urlsplit(public_origin)
+        same_origin = parsed_origin.scheme.lower() == expected.scheme.lower() and parsed_origin.netloc.lower() == expected.netloc.lower()
+    else:
+        # A reverse proxy may expose an internal upstream Host to the application.
+        forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+        expected_host = forwarded_host or request.headers.get("host", "")
+        forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
+        expected_scheme = forwarded_proto or request.url.scheme
+        same_origin = parsed_origin.netloc.lower() == expected_host.lower() and parsed_origin.scheme.lower() == expected_scheme.lower()
 
-    if (
-        not parsed_origin.netloc
-        or parsed_origin.netloc.lower() != expected_host.lower()
-        or parsed_origin.scheme.lower() != expected_scheme.lower()
-    ):
+    if not parsed_origin.netloc or not same_origin:
         raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
 
 class RegisterBody(BaseModel):

@@ -36,6 +36,16 @@ class MarketplaceApiTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 201, response.text)
 
+    def test_same_origin_guard_accepts_configured_public_origin(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"PUBLIC_ORIGIN": "https://kisan-connect.getvoroa.com"}):
+            response = self.client.post(
+                "/api/auth/register",
+                headers={"origin": "https://kisan-connect.getvoroa.com"},
+                json={"name": "Public Origin Test", "email": "public-origin@example.com", "password": "SecureTestPass123", "role": "farmer"},
+            )
+        self.assertEqual(response.status_code, 201, response.text)
+
     def test_same_origin_guard_still_rejects_foreign_origin(self):
         response = self.client.post(
             "/api/auth/register",
