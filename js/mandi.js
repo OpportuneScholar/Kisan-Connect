@@ -154,9 +154,11 @@ const MandiModule = {
         select.disabled = !state;
       };
       const resetMarkets = () => {
-        [document.getElementById("live-mandi-market"), reportMarket].forEach(select => {
-          if (select) select.replaceChildren(new Option("Loading markets…", ""));
-        });
+        const liveMarket = document.getElementById("live-mandi-market");
+        if (liveMarket) liveMarket.replaceChildren(new Option("Loading official markets…", ""));
+        if (reportMarket) reportMarket.value = "";
+        const options = document.getElementById("report-mandi-market-options");
+        if (options) options.replaceChildren();
       };
       const syncReportFromLive = () => {
         if (reportState) reportState.value = stateSelect.value;
@@ -191,12 +193,10 @@ const MandiModule = {
         resetMarkets();
         this.loadMandiMarkets();
       });
-      reportMarket?.addEventListener("change", () => {
-        const liveMarket = document.getElementById("live-mandi-market");
-        if (liveMarket) liveMarket.value = reportMarket.value;
-      });
-      document.getElementById("live-mandi-market")?.addEventListener("change", event => {
-        if (reportMarket) reportMarket.value = event.target.value;
+      reportMarket?.addEventListener("focus", () => this.loadMandiMarkets(reportMarket.value));
+      reportMarket?.addEventListener("input", () => {
+        clearTimeout(this._marketLookupTimer);
+        this._marketLookupTimer = setTimeout(() => this.loadMandiMarkets(reportMarket.value), 180);
       });
       reportCommodity?.addEventListener("change", () => {
         const liveCommodity = document.getElementById("live-mandi-commodity");
@@ -209,34 +209,34 @@ const MandiModule = {
     }
   },
 
-  async loadMandiMarkets() {
+  async loadMandiMarkets(query = "") {
     const state = document.getElementById("live-mandi-state")?.value || "";
     const district = document.getElementById("live-mandi-district")?.value || "";
     const liveSelect = document.getElementById("live-mandi-market");
-    const reportSelect = document.getElementById("report-mandi-market");
+    const reportInput = document.getElementById("report-mandi-market");
+    const datalist = document.getElementById("report-mandi-market-options");
     if (!state || !district) {
-      [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Choose state and district first", "")));
+      liveSelect?.replaceChildren(new Option("Choose state and district first", ""));
+      if (datalist) datalist.replaceChildren();
       return;
     }
-    [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Loading official markets…", "")));
     try {
-      const response = await fetch("/api/mandi/markets?" + new URLSearchParams({ state, district }), { credentials: "same-origin" });
+      const params = new URLSearchParams({ state, district });
+      if (query.trim()) params.set("q", query.trim());
+      const response = await fetch("/api/mandi/markets?" + params, { credentials: "same-origin" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Could not load market names.");
       const names = data.items || [];
-      const options = [new Option(names.length ? "Select official mandi" : "No official markets found", ""), ...names.map(name => new Option(name, name))];
-      [liveSelect, reportSelect].forEach(select => {
-        if (select) select.replaceChildren(...options.map(option => new Option(option.text, option.value)));
-      });
-      const status = document.getElementById("mandi-source-status");
-      if (!names.length && status) {
-        status.textContent = "Market list unavailable";
-        status.className = "badge badge-neutral";
+      if (liveSelect) {
+        const selected = liveSelect.value;
+        liveSelect.replaceChildren(new Option(names.length ? "Select official mandi" : "No official markets found", ""), ...names.map(name => new Option(name, name)));
+        if (names.includes(selected)) liveSelect.value = selected;
       }
-    } catch (error) {
-      [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Market list unavailable — retry", "")));
+      if (datalist) datalist.replaceChildren(...(data.suggestions || []).map(name => new Option(name, name)));
+      if (reportInput && query && datalist && !datalist.options.length) reportInput.value = query;
+    } catch (_) {
       const status = document.getElementById("mandi-source-status");
-      if (status) { status.textContent = "Market list unavailable"; status.className = "badge badge-neutral"; }
+      if (status) { status.textContent = "Official market feed unavailable"; status.className = "badge badge-neutral"; }
     }
   },
 
@@ -320,8 +320,8 @@ const MandiModule = {
       const form = event.currentTarget;
       const values = Object.fromEntries(new FormData(form).entries());
       values.pricePerQuintal = Number(values.pricePerQuintal);
-      if (!values.market || !values.state || !values.district) {
-        if (window.App) window.App.showToast("Choose a state, district and official mandi from the dropdowns first.");
+      if (!values.market || values.market.trim().length < 2 || !values.state || !values.district) {
+        if (window.App) window.App.showToast("Choose state and district, then select a suggested mandi or type a local mandi name.");
         return;
       }
       try {
@@ -329,7 +329,11 @@ const MandiModule = {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.detail || "Could not submit this report.");
         if (window.App) window.App.showToast(data.message || "Price report submitted.");
-        form.reset();
+        form.querySelector("#report-mandi-commodity").value = "";
+        form.querySelector("#report-mandi-market").value = "";
+        form.querySelector('[name="pricePerQuintal"]').value = "";
+        form.querySelector('[name="note"]').value = "";
+        await this.loadMandiMarkets("");
         await this.loadLivePrices();
       } catch (error) {
         if (window.App) window.App.showToast(error.message || "Could not connect to the server.");
