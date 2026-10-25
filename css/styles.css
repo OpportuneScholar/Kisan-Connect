@@ -2455,7 +2455,7 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 /* Keep the bottom tab bar exclusive to the installed app; browser users use the scrollable top tabs. */
 @media (max-width: 768px) {
   .mobile-bottom-bar { display: none; }
-  .desktop-nav-bar { display: block; top: 0; position: sticky; }
+  .desktop-nav-bar { display: block; top: 148px; position: sticky; }
   .desktop-nav-bar .nav-container { overflow-x: auto; }
   .desktop-nav-bar .nav-tab-btn { padding: 11px 14px; font-size: .82rem; }
   body.pwa-installed .desktop-nav-bar { display: none; }
