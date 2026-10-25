@@ -446,7 +446,9 @@ def _gov_mandi_prices(commodity: str, state: str, district: str, market: str, li
         return None
     resource_id = os.getenv("AGMARKNET_RESOURCE_ID", "9ef84268-d588-465a-a308-a864a43d0070").strip()
     params = {"api-key": api_key, "format": "json", "limit": min(max(limit, 1), 100), "sort[arrival_date]": "desc"}
-    for field, value in (("commodity", commodity), ("state", state), ("district", district), ("market", market)):
+    # The AGMARKNET resource exposes state as a keyword field; using filters[state]
+    # can return an empty set even when matching records exist.
+    for field, value in (("commodity", commodity), ("state.keyword", state), ("district", district), ("market", market)):
         if value:
             params[f"filters[{field}]"] = value
     url = f"https://api.data.gov.in/resource/{urllib.parse.quote(resource_id)}?{urllib.parse.urlencode(params)}"
@@ -528,10 +530,28 @@ def mandi_prices(commodity: str = "", state: str = "", district: str = "", marke
     return {"source": "Community reports", "mode": "community", "officialStatus": official_status, "items": averages[:limit], "updatedAt": datetime.now(timezone.utc).isoformat(), "message": message}
 
 
+@app.get("/api/mandi/markets")
+def mandi_markets(state: str = "", district: str = ""):
+    """Return canonical market names from current official AGMARKNET records for dropdowns."""
+    state, district = state.strip()[:120], district.strip()[:120]
+    if not state or not district:
+        return {"source": "AGMARKNET / data.gov.in", "items": [], "message": "Choose a state and district to load official market names."}
+    try:
+        rows = _gov_mandi_prices("", state, district, "", 100)
+        if rows is None:
+            return {"source": "AGMARKNET / data.gov.in", "items": [], "message": "Official market list is not configured."}
+        names = sorted({str(row.get("market", "")).strip() for row in rows if str(row.get("market", "")).strip()}, key=str.casefold)
+        return {"source": "AGMARKNET / data.gov.in", "items": names, "message": "Select a market name from the official list." if names else "No market names were returned for this district. Try another district or retry later."}
+    except Exception:
+        raise HTTPException(status_code=502, detail="Official market list is temporarily unavailable. Please retry.")
+
 @app.post("/api/mandi/reports", status_code=201)
 def submit_mandi_report(body: MandiReportBody, user: User = Depends(require_roles("farmer", "bulkBuyer")), db: Session = Depends(get_db)):
-    item = MandiPriceReport(reporter_id=user.id, commodity=body.commodity.strip(), market=body.market.strip(), district=body.district.strip(),
-                            state=body.state.strip(), price_per_quintal=body.pricePerQuintal, note=body.note.strip())
+    # Keep the market name consistent with the official market spelling by requiring
+    # the selected canonical name in the UI; trim repeated whitespace on all fields.
+    clean = lambda value: " ".join(value.strip().split())
+    item = MandiPriceReport(reporter_id=user.id, commodity=clean(body.commodity), market=clean(body.market), district=clean(body.district),
+                            state=clean(body.state), price_per_quintal=body.pricePerQuintal, note=body.note.strip())
     db.add(item)
     db.commit()
     return {"ok": True, "message": "Price report submitted. It will contribute to a community average after enough recent reports are available."}
