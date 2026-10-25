@@ -95,7 +95,7 @@ class MandiPriceReport(Base):
 class MandiMarket(Base):
     __tablename__ = "mandi_markets"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    market_key: Mapped[str] = mapped_column(String(360), unique=True, index=True)
+    market_key: Mapped[str] = mapped_column(String(500), unique=True, index=True)
     market: Mapped[str] = mapped_column(String(180), index=True)
     district: Mapped[str] = mapped_column(String(120), index=True)
     state: Mapped[str] = mapped_column(String(120), index=True)
