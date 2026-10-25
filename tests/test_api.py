@@ -131,6 +131,36 @@ class MarketplaceApiTests(unittest.TestCase):
         url = request.call_args.args[0]
         self.assertIn("filters%5Bstate.keyword%5D=Uttar+Pradesh", url)
 
+
+    def test_new_community_mandi_name_is_saved_and_suggested_to_other_users(self):
+        self.register("Mandi Farmer", "mandi-farmer@example.com", "farmer")
+        submitted = self.client.post("/api/mandi/reports", json={
+            "commodity": "Wheat", "market": "Bela Local Mandi", "district": "Pratapgarh",
+            "state": "Uttar Pradesh", "pricePerQuintal": 2450
+        })
+        self.assertEqual(submitted.status_code, 201, submitted.text)
+        self.client.post("/api/auth/logout", json={})
+        suggestions = self.client.get("/api/mandi/markets?state=Uttar%20Pradesh&district=Pratapgarh&q=Bela")
+        self.assertEqual(suggestions.status_code, 200, suggestions.text)
+        self.assertIn("Bela Local Mandi", suggestions.json()["suggestions"])
+
+    def test_farmer_can_publish_machine_and_buyer_can_request_rental(self):
+        self.register("Machine Farmer", "machine-farmer@example.com", "farmer")
+        listing = self.client.post("/api/machinery/listings", json={
+            "name": "Mahindra Tractor", "category": "Tractors", "location": "Malihabad, Lucknow",
+            "description": "Available on weekends", "phone": "9876543210",
+            "ratePerAcre": 800, "ratePerHour": 0, "operatorIncluded": True, "fuelIncluded": False
+        })
+        self.assertEqual(listing.status_code, 201, listing.text)
+        machine_id = listing.json()["item"]["id"]
+        self.client.post("/api/auth/logout", json={})
+        self.register("Machine Buyer", "machine-buyer@example.com", "localBuyer")
+        result = self.client.post(f"/api/machinery/listings/{machine_id}/rentals", json={
+            "phone": "9876501234", "requestedDate": "2026-11-01", "acres": 2, "message": "Need morning slot"
+        })
+        self.assertEqual(result.status_code, 201, result.text)
+        self.assertIn("Rental request sent", result.json()["message"])
+
     def test_anonymous_user_cannot_publish_listing(self):
         response = self.client.post("/api/marketplace/listings", json={
             "farmerName": "Anonymous", "phone": "9876543210", "crop": "Rice",
