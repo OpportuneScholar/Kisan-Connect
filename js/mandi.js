@@ -135,25 +135,107 @@ const MandiModule = {
       const response = await fetch("/data/india_states_districts.json", { cache: "force-cache" });
       if (!response.ok) throw new Error("Location list unavailable");
       this.indiaAdminDivisions = await response.json();
-      stateSelect.replaceChildren(new Option("Select state / UT", ""));
-      this.indiaAdminDivisions.forEach(state => stateSelect.add(new Option(state.name, state.name)));
+      const reportState = document.getElementById("report-mandi-state");
+      const reportDistrict = document.getElementById("report-mandi-district");
+      const reportMarket = document.getElementById("report-mandi-market");
+      const reportCommodity = document.getElementById("report-mandi-commodity");
+      const populateStates = select => {
+        if (!select) return;
+        select.replaceChildren(new Option("Select state / UT", ""));
+        this.indiaAdminDivisions.forEach(state => select.add(new Option(state.name, state.name)));
+      };
+      populateStates(stateSelect);
+      populateStates(reportState);
+      const populateDistricts = (select, stateName) => {
+        if (!select) return;
+        const state = this.indiaAdminDivisions.find(item => item.name === stateName);
+        select.replaceChildren(new Option(state ? "Select district" : "Select state first", ""));
+        (state?.districts || []).forEach(district => select.add(new Option(district.name, district.name)));
+        select.disabled = !state;
+      };
+      const resetMarkets = () => {
+        [document.getElementById("live-mandi-market"), reportMarket].forEach(select => {
+          if (select) select.replaceChildren(new Option("Loading markets…", ""));
+        });
+      };
+      const syncReportFromLive = () => {
+        if (reportState) reportState.value = stateSelect.value;
+        populateDistricts(reportDistrict, stateSelect.value);
+        if (reportDistrict) reportDistrict.value = districtSelect.value;
+      };
+      const syncLiveFromReport = () => {
+        stateSelect.value = reportState?.value || "";
+        populateDistricts(districtSelect, stateSelect.value);
+        districtSelect.value = reportDistrict?.value || "";
+      };
       stateSelect.addEventListener("change", () => {
-        const state = this.indiaAdminDivisions.find(item => item.name === stateSelect.value);
-        districtSelect.replaceChildren(new Option(state ? "Select district" : "Select state first", ""));
-        (state?.districts || []).forEach(district => districtSelect.add(new Option(district.name, district.name)));
-        districtSelect.disabled = !state;
-        const market = document.getElementById("live-mandi-market");
-        if (market) market.value = "";
-        document.getElementById("india-market-list")?.replaceChildren();
+        populateDistricts(districtSelect, stateSelect.value);
+        if (reportState) reportState.value = stateSelect.value;
+        populateDistricts(reportDistrict, stateSelect.value);
+        resetMarkets();
+        this.loadMandiMarkets();
       });
       districtSelect.addEventListener("change", () => {
-        const market = document.getElementById("live-mandi-market");
-        if (market) market.value = "";
-        document.getElementById("india-market-list")?.replaceChildren();
+        if (reportDistrict) reportDistrict.value = districtSelect.value;
+        resetMarkets();
+        this.loadMandiMarkets();
       });
+      reportState?.addEventListener("change", () => {
+        syncLiveFromReport();
+        resetMarkets();
+        this.loadMandiMarkets();
+      });
+      reportDistrict?.addEventListener("change", () => {
+        syncLiveFromReport();
+        resetMarkets();
+        this.loadMandiMarkets();
+      });
+      reportMarket?.addEventListener("change", () => {
+        const liveMarket = document.getElementById("live-mandi-market");
+        if (liveMarket) liveMarket.value = reportMarket.value;
+      });
+      document.getElementById("live-mandi-market")?.addEventListener("change", event => {
+        if (reportMarket) reportMarket.value = event.target.value;
+      });
+      reportCommodity?.addEventListener("change", () => {
+        const liveCommodity = document.getElementById("live-mandi-commodity");
+        if (liveCommodity && reportCommodity.value) liveCommodity.value = reportCommodity.value;
+      });
+      syncReportFromLive();
     } catch (_) {
       stateSelect.innerHTML = '<option value="">Location list unavailable — reload to retry</option>';
       if (window.App) window.App.showToast("Could not load India state/district data. Check your internet connection and retry.");
+    }
+  },
+
+  async loadMandiMarkets() {
+    const state = document.getElementById("live-mandi-state")?.value || "";
+    const district = document.getElementById("live-mandi-district")?.value || "";
+    const liveSelect = document.getElementById("live-mandi-market");
+    const reportSelect = document.getElementById("report-mandi-market");
+    if (!state || !district) {
+      [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Choose state and district first", "")));
+      return;
+    }
+    [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Loading official markets…", "")));
+    try {
+      const response = await fetch("/api/mandi/markets?" + new URLSearchParams({ state, district }), { credentials: "same-origin" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Could not load market names.");
+      const names = data.items || [];
+      const options = [new Option(names.length ? "Select official mandi" : "No official markets found", ""), ...names.map(name => new Option(name, name))];
+      [liveSelect, reportSelect].forEach(select => {
+        if (select) select.replaceChildren(...options.map(option => new Option(option.text, option.value)));
+      });
+      const status = document.getElementById("mandi-source-status");
+      if (!names.length && status) {
+        status.textContent = "Market list unavailable";
+        status.className = "badge badge-neutral";
+      }
+    } catch (error) {
+      [liveSelect, reportSelect].forEach(select => select?.replaceChildren(new Option("Market list unavailable — retry", "")));
+      const status = document.getElementById("mandi-source-status");
+      if (status) { status.textContent = "Market list unavailable"; status.className = "badge badge-neutral"; }
     }
   },
 
@@ -236,6 +318,10 @@ const MandiModule = {
       const form = event.currentTarget;
       const values = Object.fromEntries(new FormData(form).entries());
       values.pricePerQuintal = Number(values.pricePerQuintal);
+      if (!values.market || !values.state || !values.district) {
+        if (window.App) window.App.showToast("Choose a state, district and official mandi from the dropdowns first.");
+        return;
+      }
       try {
         const response = await fetch("/api/mandi/reports", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
         const data = await response.json().catch(() => ({}));
@@ -255,7 +341,8 @@ const MandiModule = {
     if (!results) return;
     const params = new URLSearchParams();
     for (const [field, id] of [["commodity", "live-mandi-commodity"], ["state", "live-mandi-state"], ["district", "live-mandi-district"], ["market", "live-mandi-market"]]) {
-      const value = document.getElementById(id)?.value.trim();
+      const raw = document.getElementById(id)?.value || "";
+      const value = raw.trim();
       if (value) params.set(field, value);
     }
     results.innerHTML = '<p class="text-sm text-muted">Loading market data…</p>';
@@ -267,11 +354,7 @@ const MandiModule = {
         status.textContent = data.mode === "official" ? "Official government data" : (data.officialStatus === "temporarily_unavailable" ? "Government feed unavailable" : "Community reports only");
         status.className = `badge ${data.mode === "official" ? "badge-success" : "badge-neutral"}`;
       }
-      const marketList = document.getElementById("india-market-list");
-      if (marketList) {
-        const marketNames = [...new Set((data.items || []).map(item => item.market).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-        marketList.replaceChildren(...marketNames.map(name => new Option(name, name)));
-      }
+
       if (!data.items || !data.items.length) {
         const setupHint = data.officialStatus === "not_configured"
           ? ' <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a> and add it to the server environment.'
