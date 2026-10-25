@@ -66,21 +66,91 @@ const AIDoctorModule = {
     this.runDiagnosis(diseaseId);
   },
 
-  handleCustomImageUpload(dataUrl, fileName) {
+  async handleCustomImageUpload(dataUrl, fileName) {
     const previewContainer = document.getElementById("diagnosis-image-preview");
     const reportContainer = document.getElementById("diagnosis-report-container");
+    const fileInput = document.getElementById("crop-photo-input");
+    const mimeType = (dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/) || [])[1];
+    if (!mimeType) {
+      if (window.App) window.App.showToast("Please upload a JPG, PNG or WebP crop photo.");
+      if (fileInput) fileInput.value = "";
+      return;
+    }
+    const base64 = dataUrl.split(",")[1] || "";
+    if (base64.length > 11_000_000) {
+      if (window.App) window.App.showToast("Image is too large. Please choose a photo under 8 MB.");
+      if (fileInput) fileInput.value = "";
+      return;
+    }
     if (previewContainer) {
-      previewContainer.innerHTML = `<img src="${dataUrl}" alt="Uploaded crop photo" class="scanned-leaf-img" />`;
+      previewContainer.innerHTML = "";
+      const image = document.createElement("img");
+      image.src = dataUrl;
+      image.alt = "Uploaded crop photo";
+      image.className = "scanned-leaf-img";
+      previewContainer.appendChild(image);
+      const caption = document.createElement("p");
+      caption.className = "text-sm text-muted";
+      caption.textContent = fileName || "Uploaded crop photo";
+      previewContainer.appendChild(caption);
     }
     if (reportContainer) {
-      reportContainer.innerHTML = `
-        <div class="diagnosis-card">
-          <h3>Photo received</h3>
-          <p>This prototype does not yet run an image-recognition model. It cannot reliably identify a disease from this photo.</p>
-          <p class="text-sm text-muted">For a demonstration, select one of the example symptoms below. For a real crop diagnosis, consult a local Krishi Vigyan Kendra or agriculture officer.</p>
-        </div>`;
+      reportContainer.innerHTML = '<div class="ai-scanning-state"><div class="scanner-anim-ring"></div><h4>AI Crop Doctor is analysing your photo…</h4><p class="text-muted">Checking visible symptoms. This may take a few seconds.</p></div>';
     }
     this.currentDiagnosis = null;
+    const crop = document.getElementById("crop-photo-crop")?.value || "";
+    try {
+      const response = await fetch("/api/crop-doctor/analyze", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType, crop })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "AI analysis is temporarily unavailable. Please try again.");
+      this.renderVisionAnalysis(data.analysis || {}, data.disclaimer || "AI suggestions can be wrong. Confirm with a qualified agricultural expert.");
+    } catch (error) {
+      if (reportContainer) {
+        reportContainer.innerHTML = "";
+        const card = document.createElement("div");
+        card.className = "diagnosis-card";
+        const heading = document.createElement("h3");
+        heading.textContent = "Could not complete AI analysis";
+        const message = document.createElement("p");
+        message.textContent = error.message || "Please try again in a moment.";
+        const note = document.createElement("p");
+        note.className = "text-sm text-muted";
+        note.textContent = "Check that the service is running and GEMINI_API_KEY is saved in the Voroa environment. For urgent crop issues, contact your local Krishi Vigyan Kendra.";
+        card.append(heading, message, note);
+        reportContainer.appendChild(card);
+      }
+    }
+  },
+
+  renderVisionAnalysis(analysis, disclaimer) {
+    const container = document.getElementById("diagnosis-report-container");
+    if (!container) return;
+    const safe = value => this.escapeHtml(String(value ?? ""));
+    const list = value => Array.isArray(value) && value.length
+      ? value.map(item => `<li>${safe(item)}</li>`).join("")
+      : "<li>No specific suggestions returned.</li>";
+    const observations = Array.isArray(analysis.observations)
+      ? analysis.observations.map(item => typeof item === "string" ? item : JSON.stringify(item)).join(" ")
+      : (analysis.observations || "No clear observations returned.");
+    const causes = Array.isArray(analysis.possibleCauses) ? analysis.possibleCauses : [];
+    const confidence = ["low", "medium", "high"].includes(String(analysis.confidence || "").toLowerCase())
+      ? String(analysis.confidence).toLowerCase() : "not specified";
+    container.innerHTML = `
+      <div class="diagnosis-card">
+        <div class="diagnosis-header"><div><div class="crop-tag">Gemini Vision</div><h2 class="diagnosis-title">Photo-based crop health assessment</h2></div><span class="badge badge-neutral">Confidence: ${safe(confidence)}</span></div>
+        <div class="symptom-alert-box"><div class="alert-icon">🔍</div><div><strong>Visible observations</strong><p>${safe(observations)}</p></div></div>
+        <div class="treatment-columns">
+          <div class="treatment-box"><h4>Possible causes to consider</h4><ul class="treatment-steps">${list(causes)}</ul></div>
+          <div class="treatment-box organic-box"><h4>Safer next steps</h4><ul class="treatment-steps">${list(analysis.safeNextSteps)}</ul></div>
+        </div>
+        <div class="preventive-box"><span class="icon">🛡️</span><div><strong>When to contact an expert</strong><p>${safe(analysis.whenToContactExpert || "If symptoms spread, the crop is wilting rapidly, or you are unsure, contact a local agriculture expert.")}</p></div></div>
+        <p class="text-sm text-muted">${safe(disclaimer)}</p>
+      </div>`;
   },
 
   runDiagnosis(diseaseId, isCustom = false) {
