@@ -6,7 +6,7 @@
 
 const App = {
   currentTab: "tab-mandi",
-  currentLang: "en",
+  currentLang: "hi",
 
   init() {
     this.loadSavedLanguage();
@@ -40,6 +40,7 @@ const App = {
     }
     const select = document.getElementById("lang-selector");
     if (select) select.value = this.currentLang;
+    this.updateDocumentLanguage(this.currentLang);
     this.applyTranslations(this.currentLang);
     this.applyGoogleTranslation(this.currentLang);
   },
@@ -57,8 +58,8 @@ const App = {
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
-      if (apply() || attempts >= 20) clearInterval(timer);
-    }, 300);
+      if (apply() || attempts >= 40) clearInterval(timer);
+    }, 500);
   },
 
   setupLanguageSwitcher() {
@@ -69,11 +70,20 @@ const App = {
         try {
           localStorage.setItem("kisan_lang", this.currentLang);
         } catch (err) {}
+        this.updateDocumentLanguage(this.currentLang);
         this.applyTranslations(this.currentLang);
         this.applyGoogleTranslation(this.currentLang);
         this.showToast(`Language selected: ${select.options[select.selectedIndex].text}`);
+        // Re-apply translation after dynamic panels/cards update their text.
+        window.setTimeout(() => this.applyGoogleTranslation(this.currentLang), 1200);
       });
     }
+  },
+
+  updateDocumentLanguage(lang) {
+    document.documentElement.lang = lang || "en";
+    document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
+    document.body.classList.toggle("language-rtl", lang === "ur");
   },
 
   applyTranslations(lang) {

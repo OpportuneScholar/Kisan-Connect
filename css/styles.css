@@ -2212,3 +2212,118 @@ button {
 .scheme-updates-panel h3,.net-mandi-calculator h3,.pesticide-calculator h3{margin:.1rem 0 .5rem}
 .calculator-result{margin-top:1rem;padding:1rem;background:#eff8f1;border:1px solid #c7e5ce;border-radius:10px;line-height:1.8}
 @media(max-width:700px){.legal-page{margin:.5rem;border-radius:10px}.site-footer{padding:1rem}.scheme-updates-panel{align-items:stretch}}
+
+
+/* Kisan Connect UI refinement: consistent controls, touch targets and responsive cards */
+:root {
+  --kc-green: #176b45;
+  --kc-green-dark: #104d33;
+  --kc-green-soft: #edf7f0;
+  --kc-border: #d5e2d9;
+  --kc-focus: rgba(23, 107, 69, .22);
+}
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; }
+.brand-logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #eaf7ee, #d7efdf);
+  border: 1px solid #c9e5d2;
+  box-shadow: 0 4px 12px rgba(23, 107, 69, .12);
+}
+.brand-logo-icon img { display: block; width: 35px; height: 35px; object-fit: contain; }
+button, input, select, textarea { font: inherit; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select, textarea {
+  max-width: 100%;
+  min-height: 44px;
+  padding: .72rem .85rem;
+  color: #1f3328;
+  background-color: #fff;
+  border: 1px solid #cbd9d0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(18, 48, 30, .035);
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--kc-focus);
+  outline-offset: 2px;
+}
+input:hover, select:hover, textarea:hover { border-color: #8fb5a0; }
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--kc-green);
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+button { min-height: 42px; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .65; cursor: wait; }
+.btn-primary { background: var(--kc-green); }
+.btn-primary:hover:not(:disabled) { background: var(--kc-green-dark); box-shadow: 0 5px 14px rgba(23,107,69,.18); }
+.live-data-panel, .scheme-updates-panel, .net-mandi-calculator, .pesticide-calculator {
+  box-shadow: 0 8px 28px rgba(28, 63, 40, .055);
+}
+.live-data-filters {
+  align-items: end;
+  gap: 14px;
+}
+.live-data-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #33483b;
+  font-size: .9rem;
+  font-weight: 650;
+}
+.live-data-filters input, .live-data-filters select { width: 100%; }
+.live-data-filters button { white-space: nowrap; }
+.upload-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 220px;
+  padding: 24px;
+  border: 2px dashed #8db99b;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #f7fcf8, #edf7f0);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
+}
+.upload-drop-zone:hover, .upload-drop-zone:focus-within {
+  border-color: var(--kc-green);
+  background: #e8f5ec;
+}
+.upload-drop-zone .upload-icon { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 18px; background: #dcefe2; font-size: 1.8rem; }
+.upload-drop-zone strong { color: #174d33; font-size: 1rem; }
+.upload-drop-zone p { margin: 0; line-height: 1.5; }
+#weather-location-status { flex-basis: 100%; color: #496353; font-size: .88rem; line-height: 1.5; }
+#weather-auto-detect[aria-busy="true"] { min-width: 180px; }
+.mandi-report-details summary { padding: 10px 0; }
+.modal-overlay { overscroll-behavior: contain; }
+.site-footer { line-height: 1.6; }
+.language-rtl { direction: rtl; }
+.language-rtl .live-data-filters label { text-align: right; }
+.goog-te-banner-frame, .goog-te-balloon-frame, #goog-gt-tt { display: none !important; }
+body { top: 0 !important; }
+@media (max-width: 700px) {
+  .brand-logo-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 12px; }
+  .brand-logo-icon img { width: 31px; height: 31px; }
+  .live-data-filters { gap: 11px; }
+  .live-data-filters button { min-height: 46px; }
+  .upload-drop-zone { min-height: 180px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

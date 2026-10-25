@@ -136,28 +136,68 @@ const FarmLedgerModule = {
       event.preventDefault();
       this.renderWeatherForecast();
     });
-    document.getElementById("weather-auto-detect")?.addEventListener("click", async () => {
+    document.getElementById("weather-auto-detect")?.addEventListener("click", async event => {
+      const button = event.currentTarget;
       const status = document.getElementById("weather-location-status");
       const input = document.getElementById("weather-location-input");
-      if (!navigator.geolocation) { if (status) status.textContent = "This browser does not support location detection. Enter your village or city manually."; return; }
-      if (status) status.textContent = "Requesting location permission…";
+      const originalLabel = button.textContent;
+      const setStatus = message => { if (status) status.textContent = message; };
+      if (!navigator.geolocation) {
+        setStatus("Location detection is not supported in this browser. Enter your village or city manually.");
+        return;
+      }
+      if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+        setStatus("Automatic location needs a secure HTTPS connection. Enter your village or city manually.");
+        return;
+      }
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Detecting location…";
+      setStatus("Allow location access when your browser asks. Your location is used to find nearby weather.");
+      const finish = () => {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        button.textContent = originalLabel;
+      };
       navigator.geolocation.getCurrentPosition(async position => {
         try {
           const { latitude, longitude } = position.coords;
-          
-const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
-const response = await fetch(url);
-if (!response.ok) throw new Error(`Location lookup failed (${response.status})`);
-const place = await response.json();
-const locality = place.locality || place.city || place.localityInfo?.administrative?.[0]?.name;
-if (!locality) throw new Error("Could not identify a nearby village or town");
-const label = [locality, place.principalSubdivision, place.countryName].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).join(", ");
-
+          let label = "";
+          // Try the primary reverse-geocoding API, then use a fallback if it is unavailable.
+          try {
+            const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+            const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+            if (!response.ok) throw new Error("Primary location service unavailable");
+            const place = await response.json();
+            const locality = place.locality || place.city || place.localityInfo?.administrative?.find(item => /district|county/i.test(item.description || item.name || ""))?.name;
+            label = [locality, place.principalSubdivision, place.countryName].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).join(", ");
+          } catch (primaryError) {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`;
+            const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+            if (!response.ok) throw new Error("Location lookup service is temporarily unavailable");
+            const place = await response.json();
+            const address = place.address || {};
+            const locality = address.village || address.town || address.city || address.suburb || address.county;
+            label = [locality, address.state, address.country].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).join(", ");
+          }
+          if (!label) throw new Error("A nearby village or town could not be identified");
           input.value = label;
-          if (status) status.textContent = `Detected: ${label}. Updating forecast…`;
+          setStatus(`Detected: ${label}. Updating forecast…`);
           this.renderWeatherForecast();
-        } catch (error) { if (status) status.textContent = `${error.message}. Please enter your location manually.`; }
-      }, error => { if (status) status.textContent = `${error.code === 1 ? "Location permission denied" : "Could not detect location"}. Enter your village or city manually.`; }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+        } catch (error) {
+          setStatus(`${error.message || "Could not look up your location"}. Please enter your village or city manually.`);
+        } finally {
+          finish();
+        }
+      }, error => {
+        const message = error.code === 1
+          ? "Location permission was denied."
+          : error.code === 3
+            ? "Location detection timed out."
+            : "Your location could not be detected.";
+        setStatus(`${message} Allow location permission and try again, or enter your village or city manually.`);
+        finish();
+      }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
     });
     document.getElementById("weather-speak-button")?.addEventListener("click", () => {
       const summary = document.getElementById("weather-current-summary")?.dataset.speech;

@@ -8,10 +8,11 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#1f6b45" />
+  <meta name="color-scheme" content="light" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
 </head>
 <body>
 
@@ -40,7 +41,7 @@
   <div class="main-header">
     <div class="header-inner">
       <div class="brand-wrapper">
-        <span class="brand-logo-icon" aria-hidden="true">KC</span>
+        <span class="brand-logo-icon" aria-hidden="true"><img src="/icon.svg" alt="" width="34" height="34" /></span>
         <div>
           <h1 class="brand-title" data-i18n="appName">Kisan Connect</h1>
           <p class="brand-subtitle" data-i18n="appTagline">Empowering Small & Marginal Farmers</p>
@@ -130,8 +131,8 @@
         </div>
         <div class="live-data-filters">
           <label>Crop <input id="live-mandi-commodity" type="text" placeholder="e.g. Wheat" /></label>
-          <label>State <input id="live-mandi-state" type="text" placeholder="e.g. Uttar Pradesh" /></label>
-          <label>District <input id="live-mandi-district" type="text" placeholder="e.g. Jaunpur" /></label>
+          <label>State <input id="live-mandi-state" type="text" list="india-states-list" placeholder="Choose or type a state" autocomplete="address-level1" /><datalist id="india-states-list"><option value="Andhra Pradesh"></option><option value="Arunachal Pradesh"></option><option value="Assam"></option><option value="Bihar"></option><option value="Chhattisgarh"></option><option value="Goa"></option><option value="Gujarat"></option><option value="Haryana"></option><option value="Himachal Pradesh"></option><option value="Jharkhand"></option><option value="Karnataka"></option><option value="Kerala"></option><option value="Madhya Pradesh"></option><option value="Maharashtra"></option><option value="Manipur"></option><option value="Meghalaya"></option><option value="Mizoram"></option><option value="Nagaland"></option><option value="Odisha"></option><option value="Punjab"></option><option value="Rajasthan"></option><option value="Sikkim"></option><option value="Tamil Nadu"></option><option value="Telangana"></option><option value="Tripura"></option><option value="Uttar Pradesh"></option><option value="Uttarakhand"></option><option value="West Bengal"></option><option value="Andaman and Nicobar Islands"></option><option value="Chandigarh"></option><option value="Dadra and Nagar Haveli and Daman and Diu"></option><option value="Delhi"></option><option value="Jammu and Kashmir"></option><option value="Ladakh"></option><option value="Lakshadweep"></option><option value="Puducherry"></option></datalist></label>
+          <label>District <input id="live-mandi-district" type="text" list="india-districts-list" placeholder="Choose or type a district" autocomplete="address-level2" /><datalist id="india-districts-list"><option value="Agra"></option><option value="Aligarh"></option><option value="Ayodhya"></option><option value="Azamgarh"></option><option value="Bareilly"></option><option value="Basti"></option><option value="Gorakhpur"></option><option value="Jaunpur"></option><option value="Jhansi"></option><option value="Kanpur Nagar"></option><option value="Lucknow"></option><option value="Mathura"></option><option value="Meerut"></option><option value="Prayagraj"></option><option value="Varanasi"></option><option value="Patna"></option><option value="Siwan"></option><option value="Gopalganj"></option><option value="Muzaffarpur"></option><option value="Darbhanga"></option><option value="Gaya"></option><option value="Purnia"></option><option value="Indore"></option><option value="Bhopal"></option><option value="Jaipur"></option><option value="Jodhpur"></option><option value="Amritsar"></option><option value="Ludhiana"></option><option value="Nashik"></option><option value="Pune"></option><option value="Nagpur"></option><option value="Ahmedabad"></option><option value="Surat"></option><option value="Karnal"></option><option value="Hisar"></option></datalist></label>
           <label>Market <input id="live-mandi-market" type="text" placeholder="Optional mandi name" /></label>
           <button id="btn-load-live-mandi" class="btn btn-primary" type="button">Find rates</button>
         </div>
