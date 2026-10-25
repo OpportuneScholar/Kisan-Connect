@@ -70,6 +70,10 @@ const MachineryModule = {
   setupCommunityListingListeners() {
     if (this._communityListenersReady) return;
     this._communityListenersReady = true;
+    document.getElementById("btn-view-machine-requests")?.addEventListener("click", async () => {
+      if (!window.Auth || !(await window.Auth.ensureRole("farmer", "Log in as a farmer to view requests for your machines."))) return;
+      await this.loadIncomingRentalRequests();
+    });
     document.getElementById("btn-list-machinery")?.addEventListener("click", async () => {
       if (!window.Auth || !(await window.Auth.ensureRole("farmer", "Log in as a farmer to list your machine."))) return;
       if (window.App) window.App.openModal("modal-list-machinery");
@@ -127,6 +131,26 @@ const MachineryModule = {
     });
   },
 
+  async loadIncomingRentalRequests() {
+    const panel = document.getElementById("my-machinery-rental-requests");
+    if (!panel) return;
+    panel.hidden = false;
+    panel.innerHTML = '<p class="text-sm text-muted">Loading rental requests…</p>';
+    try {
+      const response = await fetch("/api/machinery/rentals/incoming", { credentials: "same-origin" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Could not load rental requests.");
+      const items = data.items || [];
+      if (!items.length) { panel.innerHTML = '<h3>Requests for your machines</h3><p class="text-sm text-muted">No rental requests yet.</p>'; return; }
+      panel.innerHTML = '<h3>Requests for your machines</h3>' + items.map(item =>
+        '<div class="incoming-enquiry-row"><div><strong>' + this.escapeHTML(item.machineName) + '</strong>' +
+        '<p>From ' + this.escapeHTML(item.requesterName) + ' · ' + this.escapeHTML(item.requestedDate) + ' · ' + this.escapeHTML(item.acres) + ' acres</p>' +
+        '<p>' + this.escapeHTML(item.message || "No additional message") + '</p><p>Status: ' + this.escapeHTML(item.status) + '</p></div><div><a class="btn btn-sm btn-outline" href="tel:' + this.escapeHTML(item.phone) + '">Call renter</a></div></div>'
+      ).join("");
+    } catch (error) {
+      panel.innerHTML = '<p class="text-sm text-muted">' + this.escapeHTML(error.message || "Could not load requests.") + '</p>';
+    }
+  },
   openCommunityRental(listingId) {
     const item = this.communityListings.find(listing => Number(listing.id) === Number(listingId));
     if (!item) return;
