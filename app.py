@@ -91,6 +91,47 @@ class MandiPriceReport(Base):
     note: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
 
+
+class MandiMarket(Base):
+    __tablename__ = "mandi_markets"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    market_key: Mapped[str] = mapped_column(String(360), unique=True, index=True)
+    market: Mapped[str] = mapped_column(String(180), index=True)
+    district: Mapped[str] = mapped_column(String(120), index=True)
+    state: Mapped[str] = mapped_column(String(120), index=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class MachineryListing(Base):
+    __tablename__ = "machinery_listings"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    name: Mapped[str] = mapped_column(String(140))
+    category: Mapped[str] = mapped_column(String(80), index=True)
+    location: Mapped[str] = mapped_column(String(180), index=True)
+    description: Mapped[str] = mapped_column(String(1000), default="")
+    phone: Mapped[str] = mapped_column(String(30))
+    rate_per_acre: Mapped[float] = mapped_column(Float, default=0)
+    rate_per_hour: Mapped[float] = mapped_column(Float, default=0)
+    operator_included: Mapped[bool] = mapped_column(Boolean, default=False)
+    fuel_included: Mapped[bool] = mapped_column(Boolean, default=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class MachineryRentalRequest(Base):
+    __tablename__ = "machinery_rental_requests"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    listing_id: Mapped[int] = mapped_column(ForeignKey("machinery_listings.id"), index=True)
+    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    phone: Mapped[str] = mapped_column(String(30))
+    requested_date: Mapped[str] = mapped_column(String(20))
+    acres: Mapped[float] = mapped_column(Float)
+    message: Mapped[str] = mapped_column(String(500), default="")
+    status: Mapped[str] = mapped_column(String(20), default="new", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
 class PurchaseEnquiry(Base):
     __tablename__ = "purchase_enquiries"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -231,6 +272,25 @@ class MandiReportBody(BaseModel):
     state: str = Field(min_length=2, max_length=120)
     pricePerQuintal: float = Field(gt=0, le=1000000)
     note: str = Field(default="", max_length=300)
+
+
+class MachineryListingBody(BaseModel):
+    name: str = Field(min_length=2, max_length=140)
+    category: str = Field(min_length=2, max_length=80)
+    location: str = Field(min_length=2, max_length=180)
+    description: str = Field(default="", max_length=1000)
+    phone: str = Field(min_length=7, max_length=30)
+    ratePerAcre: float = Field(default=0, ge=0, le=1000000)
+    ratePerHour: float = Field(default=0, ge=0, le=1000000)
+    operatorIncluded: bool = False
+    fuelIncluded: bool = False
+
+
+class MachineryRentalBody(BaseModel):
+    phone: str = Field(min_length=7, max_length=30)
+    requestedDate: str = Field(min_length=8, max_length=20)
+    acres: float = Field(gt=0, le=100000)
+    message: str = Field(default="", max_length=500)
 
 class EnquiryBody(BaseModel):
     quantity: float = Field(gt=0, le=10000000)
@@ -531,30 +591,99 @@ def mandi_prices(commodity: str = "", state: str = "", district: str = "", marke
 
 
 @app.get("/api/mandi/markets")
-def mandi_markets(state: str = "", district: str = ""):
-    """Return canonical market names from current official AGMARKNET records for dropdowns."""
-    state, district = state.strip()[:120], district.strip()[:120]
+def mandi_markets(state: str = "", district: str = "", q: str = "", db: Session = Depends(get_db)):
+    """Merge current official names with community-added names stored permanently in the database."""
+    state, district, q = state.strip()[:120], district.strip()[:120], q.strip()[:100]
     if not state or not district:
-        return {"source": "AGMARKNET / data.gov.in", "items": [], "message": "Choose a state and district to load official market names."}
+        return {"source": "Kisan Connect + AGMARKNET", "items": [], "savedItems": [], "suggestions": [],
+                "message": "Choose a state and district to load market names."}
+    saved = list(db.scalars(select(MandiMarket).where(
+        func.lower(MandiMarket.state) == state.casefold(),
+        func.lower(MandiMarket.district) == district.casefold()
+    ).order_by(MandiMarket.market.asc()).limit(500)))
+    saved_names = {row.market.strip() for row in saved if row.market.strip()}
+    official_names = set()
     try:
         rows = _gov_mandi_prices("", state, district, "", 100)
-        if rows is None:
-            return {"source": "AGMARKNET / data.gov.in", "items": [], "message": "Official market list is not configured."}
-        names = sorted({str(row.get("market", "")).strip() for row in rows if str(row.get("market", "")).strip()}, key=str.casefold)
-        return {"source": "AGMARKNET / data.gov.in", "items": names, "message": "Select a market name from the official list." if names else "No market names were returned for this district. Try another district or retry later."}
+        for row in rows or []:
+            name = str(row.get("market", "")).strip()
+            if name:
+                official_names.add(name)
     except Exception:
-        raise HTTPException(status_code=502, detail="Official market list is temporarily unavailable. Please retry.")
+        # Community-saved markets must remain available even if the official feed fails.
+        pass
+    names = sorted(official_names, key=str.casefold)
+    suggestions = sorted(saved_names | official_names, key=str.casefold)
+    if q:
+        needle = q.casefold()
+        suggestions = [name for name in suggestions if needle in name.casefold()]
+    return {"source": "Kisan Connect + AGMARKNET", "items": names, "savedItems": sorted(saved_names, key=str.casefold),
+            "suggestions": suggestions[:100],
+            "message": "Official and community-saved markets." if suggestions else "No saved match yet. Type the local mandi name and submit a report to save it."}
+
 
 @app.post("/api/mandi/reports", status_code=201)
 def submit_mandi_report(body: MandiReportBody, user: User = Depends(require_roles("farmer", "bulkBuyer")), db: Session = Depends(get_db)):
-    # Keep the market name consistent with the official market spelling by requiring
-    # the selected canonical name in the UI; trim repeated whitespace on all fields.
     clean = lambda value: " ".join(value.strip().split())
-    item = MandiPriceReport(reporter_id=user.id, commodity=clean(body.commodity), market=clean(body.market), district=clean(body.district),
-                            state=clean(body.state), price_per_quintal=body.pricePerQuintal, note=body.note.strip())
+    commodity, market, district, state = (clean(body.commodity), clean(body.market), clean(body.district), clean(body.state))
+    # Save each new market once. Later users can autocomplete the same canonical name.
+    market_key = "|".join(part.casefold() for part in (state, district, market))
+    saved_market = db.scalar(select(MandiMarket).where(MandiMarket.market_key == market_key))
+    if saved_market:
+        market = saved_market.market
+    else:
+        db.add(MandiMarket(market_key=market_key, market=market, district=district, state=state, created_by=user.id))
+    item = MandiPriceReport(reporter_id=user.id, commodity=commodity, market=market, district=district,
+                            state=state, price_per_quintal=body.pricePerQuintal, note=body.note.strip())
     db.add(item)
     db.commit()
-    return {"ok": True, "message": "Price report submitted. It will contribute to a community average after enough recent reports are available."}
+    return {"ok": True, "market": market, "message": "Price report submitted. This mandi name is now saved for future suggestions. Community averages still require three distinct recent accounts."}
+
+
+@app.get("/api/machinery/listings")
+def get_machinery_listings(q: str = "", category: str = "", db: Session = Depends(get_db)):
+    query = select(MachineryListing).where(MachineryListing.active.is_(True)).order_by(MachineryListing.created_at.desc()).limit(300)
+    items = list(db.scalars(query))
+    if q.strip():
+        needle = q.strip().casefold()
+        items = [item for item in items if needle in item.name.casefold() or needle in item.category.casefold() or needle in item.location.casefold() or needle in item.description.casefold()]
+    if category.strip():
+        items = [item for item in items if item.category.casefold() == category.strip().casefold()]
+    return {"items": [{"id": item.id, "name": item.name, "category": item.category, "location": item.location,
+        "description": item.description, "phone": item.phone, "ownerName": (db.get(User, item.owner_id).name if db.get(User, item.owner_id) else "Farmer"),
+        "ratePerAcre": item.rate_per_acre, "ratePerHour": item.rate_per_hour, "operatorIncluded": item.operator_included,
+        "fuelIncluded": item.fuel_included, "createdAt": item.created_at.isoformat() if item.created_at else None} for item in items]}
+
+
+@app.post("/api/machinery/listings", status_code=201)
+def create_machinery_listing(body: MachineryListingBody, user: User = Depends(require_roles("farmer")), db: Session = Depends(get_db)):
+    if body.ratePerAcre <= 0 and body.ratePerHour <= 0:
+        raise HTTPException(status_code=422, detail="Enter a rental rate per acre or per hour.")
+    item = MachineryListing(owner_id=user.id, name=" ".join(body.name.split()), category=" ".join(body.category.split()),
+        location=" ".join(body.location.split()), description=body.description.strip(), phone=body.phone.strip(),
+        rate_per_acre=body.ratePerAcre, rate_per_hour=body.ratePerHour,
+        operator_included=body.operatorIncluded, fuel_included=body.fuelIncluded)
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"item": {"id": item.id, "name": item.name, "category": item.category, "location": item.location,
+        "description": item.description, "phone": item.phone, "ownerName": user.name, "ratePerAcre": item.rate_per_acre,
+        "ratePerHour": item.rate_per_hour, "operatorIncluded": item.operator_included, "fuelIncluded": item.fuel_included,
+        "createdAt": item.created_at.isoformat() if item.created_at else None}}
+
+
+@app.post("/api/machinery/listings/{listing_id}/rentals", status_code=201)
+def request_machinery_rental(listing_id: int, body: MachineryRentalBody, user: User = Depends(require_roles("farmer", "localBuyer", "bulkBuyer")), db: Session = Depends(get_db)):
+    item = db.get(MachineryListing, listing_id)
+    if not item or not item.active:
+        raise HTTPException(status_code=404, detail="This machine listing is no longer available.")
+    if item.owner_id == user.id:
+        raise HTTPException(status_code=400, detail="You cannot request to rent your own machine.")
+    rental = MachineryRentalRequest(listing_id=item.id, requester_id=user.id, phone=body.phone.strip(),
+        requested_date=body.requestedDate, acres=body.acres, message=body.message.strip())
+    db.add(rental)
+    db.commit()
+    return {"ok": True, "message": "Rental request sent to the machine owner. The owner can contact you using the phone number you provided."}
 
 
 
