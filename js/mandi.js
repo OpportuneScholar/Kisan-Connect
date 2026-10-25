@@ -127,8 +127,96 @@ const MandiModule = {
     }
   },
 
+  async initIndiaLocationControls() {
+    const stateSelect = document.getElementById("live-mandi-state");
+    const districtSelect = document.getElementById("live-mandi-district");
+    if (!stateSelect || !districtSelect) return;
+    try {
+      const response = await fetch("/data/india_states_districts.json", { cache: "force-cache" });
+      if (!response.ok) throw new Error("Location list unavailable");
+      this.indiaAdminDivisions = await response.json();
+      stateSelect.replaceChildren(new Option("Select state / UT", ""));
+      this.indiaAdminDivisions.forEach(state => stateSelect.add(new Option(state.name, state.name)));
+      stateSelect.addEventListener("change", () => {
+        const state = this.indiaAdminDivisions.find(item => item.name === stateSelect.value);
+        districtSelect.replaceChildren(new Option(state ? "Select district" : "Select state first", ""));
+        (state?.districts || []).forEach(district => districtSelect.add(new Option(district.name, district.name)));
+        districtSelect.disabled = !state;
+        const market = document.getElementById("live-mandi-market");
+        if (market) market.value = "";
+        document.getElementById("india-market-list")?.replaceChildren();
+      });
+      districtSelect.addEventListener("change", () => {
+        const market = document.getElementById("live-mandi-market");
+        if (market) market.value = "";
+        document.getElementById("india-market-list")?.replaceChildren();
+      });
+    } catch (_) {
+      stateSelect.innerHTML = '<option value="">Location list unavailable — reload to retry</option>';
+      if (window.App) window.App.showToast("Could not load India state/district data. Check your internet connection and retry.");
+    }
+  },
+
+  async detectMandiLocation() {
+    const button = document.getElementById("btn-detect-mandi-location");
+    const stateSelect = document.getElementById("live-mandi-state");
+    const districtSelect = document.getElementById("live-mandi-district");
+    const status = document.getElementById("mandi-source-status");
+    const setStatus = message => { if (status) status.textContent = message; };
+    if (!navigator.geolocation) {
+      setStatus("Location is not supported by this browser. Select state and district manually.");
+      return;
+    }
+    if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+      setStatus("Location detection requires HTTPS. Select state and district manually.");
+      return;
+    }
+    const original = button?.textContent || "📍 Detect location";
+    if (button) { button.disabled = true; button.textContent = "Detecting…"; }
+    setStatus("Allow location permission to find your state and district…");
+    try {
+      const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false, timeout: 15000, maximumAge: 300000
+      }));
+      const { latitude, longitude } = position.coords;
+      let place;
+      try {
+        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`, { signal: AbortSignal.timeout(9000) });
+        if (!response.ok) throw new Error("Reverse geocoder unavailable");
+        place = await response.json();
+      } catch (_) {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`, { signal: AbortSignal.timeout(9000) });
+        if (!response.ok) throw new Error("Could not look up this location");
+        const result = await response.json();
+        const address = result.address || {};
+        place = { locality: address.village || address.town || address.city || address.suburb || "", principalSubdivision: address.state || "", district: address.county || address.state_district || "" };
+      }
+      const administrative = place.localityInfo?.administrative || [];
+      const stateName = place.principalSubdivision || place.state || "";
+      const districtName = place.district || administrative.find(item => /district|county/i.test(item.description || ""))?.name || "";
+      const locality = place.locality || place.city || "";
+      if (!stateName) throw new Error("Could not identify your state. Please select it manually.");
+      const state = (this.indiaAdminDivisions || []).find(item => item.name.toLowerCase() === stateName.toLowerCase() || item.name.toLowerCase().includes(stateName.toLowerCase()));
+      if (!state) throw new Error(`Detected state: ${stateName}. Please select it manually from the list.`);
+      stateSelect.value = state.name;
+      stateSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      const district = (state.districts || []).find(item => item.name.toLowerCase() === districtName.toLowerCase() || item.name.toLowerCase().includes(districtName.toLowerCase()) || districtName.toLowerCase().includes(item.name.toLowerCase()));
+      if (district) districtSelect.value = district.name;
+      else if (districtName) { districtSelect.add(new Option(districtName, districtName)); districtSelect.value = districtName; }
+      setStatus(`Detected: ${[locality, districtName || district?.name, state.name].filter(Boolean).join(", ")}. Select a crop and choose a mandi from available suggestions.`);
+      await this.loadLivePrices();
+    } catch (error) {
+      const message = error.code === 1 ? "Location permission was denied." : error.code === 3 ? "Location detection timed out." : (error.message || "Location detection failed.");
+      setStatus(`${message} You can select state and district manually.`);
+    } finally {
+      if (button) { button.disabled = false; button.textContent = original; }
+    }
+  },
+
   setupLiveDataListeners() {
+    this.initIndiaLocationControls();
     document.getElementById("btn-load-live-mandi")?.addEventListener("click", () => this.loadLivePrices());
+    document.getElementById("btn-detect-mandi-location")?.addEventListener("click", () => this.detectMandiLocation());
     document.getElementById("mandi-price-report-form")?.addEventListener("submit", async event => {
       event.preventDefault();
       if (!window.Auth || !(await window.Auth.ensureRole(["farmer", "bulkBuyer"], "Log in as a farmer or bulk buyer to submit a market report."))) return;
@@ -165,6 +253,11 @@ const MandiModule = {
       if (status) {
         status.textContent = data.mode === "official" ? "Official government data" : (data.officialStatus === "temporarily_unavailable" ? "Government feed unavailable" : "Community reports only");
         status.className = `badge ${data.mode === "official" ? "badge-success" : "badge-neutral"}`;
+      }
+      const marketList = document.getElementById("india-market-list");
+      if (marketList) {
+        const marketNames = [...new Set((data.items || []).map(item => item.market).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        marketList.replaceChildren(...marketNames.map(name => new Option(name, name)));
       }
       if (!data.items || !data.items.length) {
         results.innerHTML = `<p class="text-sm text-muted">${this.escapeHTML(data.message || "No recent records found for these filters.")}</p><p class="live-data-source-note">For official rates, configure DATA_GOV_IN_API_KEY in the server environment. <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a>.</p>`;

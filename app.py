@@ -179,11 +179,24 @@ def require_roles(*roles):
 
 
 def enforce_same_origin(request: Request):
+    """Reject cross-site state-changing requests while supporting trusted reverse proxies."""
     origin = request.headers.get("origin")
-    if origin:
-        expected = f"{request.url.scheme}://{request.headers.get('host', '')}"
-        if origin.rstrip("/") != expected.rstrip("/"):
-            raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
+    if not origin:
+        return
+
+    parsed_origin = urllib.parse.urlsplit(origin)
+    # A reverse proxy may expose an internal upstream Host to the application.
+    forwarded_host = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+    expected_host = forwarded_host or request.headers.get("host", "")
+    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip()
+    expected_scheme = forwarded_proto or request.url.scheme
+
+    if (
+        not parsed_origin.netloc
+        or parsed_origin.netloc.lower() != expected_host.lower()
+        or parsed_origin.scheme.lower() != expected_scheme.lower()
+    ):
+        raise HTTPException(status_code=403, detail="Cross-origin request blocked.")
 
 class RegisterBody(BaseModel):
     name: str = Field(min_length=2, max_length=100)

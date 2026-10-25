@@ -24,6 +24,26 @@ class MarketplaceApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()["user"]
 
+    def test_same_origin_guard_accepts_public_origin_behind_reverse_proxy(self):
+        response = self.client.post(
+            "/api/auth/register",
+            headers={
+                "origin": "https://kisan-connect.getvoroa.com",
+                "x-forwarded-host": "kisan-connect.getvoroa.com",
+                "x-forwarded-proto": "https",
+            },
+            json={"name": "Proxy Test", "email": "proxy@example.com", "password": "SecureTestPass123", "role": "farmer"},
+        )
+        self.assertEqual(response.status_code, 201, response.text)
+
+    def test_same_origin_guard_still_rejects_foreign_origin(self):
+        response = self.client.post(
+            "/api/auth/register",
+            headers={"origin": "https://attacker.example"},
+            json={"name": "Blocked Test", "email": "blocked@example.com", "password": "SecureTestPass123", "role": "farmer"},
+        )
+        self.assertEqual(response.status_code, 403, response.text)
+
     def test_farmer_can_publish_and_public_can_read_listing(self):
         self.register("Test Farmer", "farmer@example.com", "farmer")
         response = self.client.post("/api/marketplace/listings", json={

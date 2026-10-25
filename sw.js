@@ -1,5 +1,5 @@
 const CACHE_NAME = "kisan-connect-shell-v2";
-const SHELL = ["/", "/manifest.json", "/icon.svg", "/css/styles.css", "/js/app.js", "/js/data.js", "/js/mandi.js", "/js/farm-ledger.js", "/js/improvements.js"];
+const SHELL = ["/", "/manifest.json", "/icon.svg", "/css/styles.css", "/js/app.js", "/js/data.js", "/js/mandi.js", "/js/farm-ledger.js", "/js/improvements.js", "/data/india_states_districts.json"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).catch(() => {}));
   self.skipWaiting();
