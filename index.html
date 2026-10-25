@@ -225,7 +225,7 @@
           <h2>Yantra Sahay — Equipment rental and pooling</h2>
           <p>Find farm machines to rent, or list your own tractor, harvester, rotavator or other equipment for nearby farmers.</p>
         </div>
-        <button class="btn btn-primary" id="btn-list-machinery" type="button">List your machine</button>
+        <div class="farmer-market-actions"><button class="btn btn-outline" id="btn-view-machine-requests" type="button">My rental requests</button><button class="btn btn-primary" id="btn-list-machinery" type="button">List your machine</button></div>
       </div>
 
       <!-- Co-Farming Equipment Pooling Calculator -->
@@ -294,6 +294,7 @@
       <section class="community-machinery-section" aria-labelledby="community-machinery-heading">
         <div class="section-header-bar"><div class="section-title-group"><h3 id="community-machinery-heading">Machines listed by farmers</h3><p>Listings submitted by registered farmers and saved in the database. Send a rental request to the owner.</p></div></div>
         <div id="community-machinery-status" class="text-sm text-muted" aria-live="polite">Loading farmer listings…</div>
+        <div id="my-machinery-rental-requests" class="incoming-enquiries" hidden></div>
         <div id="community-machinery-listings" class="cards-grid-3"></div>
       </section>
     </div>
