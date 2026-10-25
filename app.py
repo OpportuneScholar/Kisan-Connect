@@ -470,12 +470,21 @@ def mandi_prices(commodity: str = "", state: str = "", district: str = "", marke
     official_status = "not_configured"
     try:
         official = _gov_mandi_prices(commodity, state, district, market, limit)
-        if official is not None:
+        # Market names can vary in capitalization/spelling across the portal. If an exact
+        # market filter returns nothing, retry the same crop/state/district without it,
+        # then match the market locally without case sensitivity.
+        if official == [] and market:
+            broader = _gov_mandi_prices(commodity, state, district, "", limit)
+            if broader is not None:
+                official = [row for row in broader if market.casefold() in str(row.get("market", "")).casefold()]
+        if official:
             return {"source": "AGMARKNET / data.gov.in", "mode": "official", "officialStatus": "available", "items": official, "updatedAt": datetime.now(timezone.utc).isoformat(),
                     "message": "Official market records; arrival date is shown per record. Prices can vary by variety and quality."}
+        if official is not None:
+            official_status = "no_matching_records"
     except Exception:
         official_status = "temporarily_unavailable"
-    if os.getenv("DATA_GOV_IN_API_KEY", "").strip() and official_status != "temporarily_unavailable":
+    if os.getenv("DATA_GOV_IN_API_KEY", "").strip() and official_status == "not_configured":
         official_status = "temporarily_unavailable"
     query = select(MandiPriceReport)
     if commodity:
