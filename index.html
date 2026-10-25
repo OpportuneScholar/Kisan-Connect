@@ -91,8 +91,8 @@
   <!-- Hero Section -->
   <section class="hero-banner">
     <div class="hero-inner">
-      <div class="hero-tagline-badge">A practical digital toolkit for Indian farmers</div>
-      <h2 class="hero-title">Grow with better information. Sell with more choice.</h2>
+      <div class="hero-tagline-badge">Farm information and services</div>
+      <h2 class="hero-title">Useful farm information for everyday decisions.</h2>
       <p class="hero-desc">
         Explore produce listings, compare market information, find farm equipment, check government schemes and keep track of cultivation costs — in one place.
       </p>
@@ -143,7 +143,7 @@
           <label>Market / Mandi
             <select id="live-mandi-market"><option value="">Choose state and district first</option></select>
           </label>
-          <button id="btn-detect-mandi-location" class="btn btn-outline" type="button">📍 Detect location</button>
+          <button id="btn-detect-mandi-location" class="btn btn-outline" type="button"> Detect location</button>
           <button id="btn-load-live-mandi" class="btn btn-primary" type="button">Find rates</button>
         </div>
         <div id="live-mandi-results" class="live-data-results" aria-live="polite"><p class="text-sm text-muted">Choose a crop or district and load available market records.</p></div>
@@ -168,7 +168,7 @@
       <!-- Filter Controls Bar -->
       <div class="filter-controls-bar">
         <div class="search-input-group">
-          <span class="icon">🔍</span>
+          <span class="icon" aria-hidden="true"></span>
           <input type="text" id="mandi-search-input" placeholder="Search wheat, mustard, paddy, mandi name..." />
         </div>
 
@@ -223,7 +223,7 @@
       <div class="section-header-bar">
         <div class="section-title-group">
           <h2>Yantra Sahay — Equipment rental and pooling</h2>
-          <p>Uber for farm implements: Access tractors, harvesters, laser levelers, and drone sprayers at affordable hourly/acre rates.</p>
+          <p>Find tractors, harvesters, laser levelers and drone sprayers available for hourly or per-acre rental.</p>
         </div>
       </div>
 
@@ -231,7 +231,7 @@
       <div id="pooling-calculator-section" class="pooling-calc-container">
         <div class="calc-header">
           <div>
-            <h3>🤝 Community Machinery Pooling Calculator</h3>
+            <h3> Community Machinery Pooling Calculator</h3>
             <p class="text-muted">See how much you and your neighbors save by co-renting equipment for contiguous plots.</p>
           </div>
           <span class="badge badge-success">Save up to 35%</span>
@@ -268,7 +268,7 @@
       <!-- Machinery Filters -->
       <div class="filter-controls-bar">
         <div class="search-input-group">
-          <span class="icon">🔍</span>
+          <span class="icon" aria-hidden="true"></span>
           <input type="text" id="machinery-search-input" placeholder="Search tractor, harvester, drone, rotavator..." />
         </div>
 
@@ -308,7 +308,7 @@
         <!-- Left: Upload & Specimen Selector -->
         <div class="doctor-upload-sidebar">
           <label for="crop-photo-input" class="upload-drop-zone">
-            <div class="upload-icon">📷</div>
+            <div class="upload-icon"></div>
             <strong>Upload Leaf / Crop Photo</strong>
             <p class="text-sm text-muted">Click to select photo from phone or gallery (JPG, PNG or WebP; max 8 MB)</p>
             <input type="file" id="crop-photo-input" accept="image/jpeg,image/png,image/webp" style="display: none;" />
@@ -349,20 +349,20 @@
       <div id="kisan-chat-wrapper" class="kisan-chat-box">
         <div class="chat-header">
           <div>
-            <h3>🤖 Kisan Sahayak AI — 24x7 Agronomy Chat Assistant</h3>
+            <h3> Kisan Sahayak AI — 24x7 Agronomy Chat Assistant</h3>
             <p class="text-sm text-muted">Ask questions in Hindi, English, Punjabi, Marathi, Telugu, or Bengali.</p>
           </div>
-          <span class="badge badge-success">✓ Online & Ready</span>
+          <span class="badge badge-success"> Online & Ready</span>
         </div>
 
         <div id="ai-chat-messages" class="chat-messages-area"></div>
 
         <div class="preset-queries-row">
           <span class="text-xs text-muted" style="align-self: center;">Quick Questions:</span>
-          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to control Yellow Rust in wheat?')">🌾 Yellow Rust in Wheat</button>
-          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to make Jeevamrit at home?')">🧪 Homemade Jeevamrit</button>
-          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to get 90% subsidy on Solar Pump?')">☀️ Solar Pump Subsidy</button>
-          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('Can I spray pesticide in today weather?')">🌦️ Spray Window Check</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to control Yellow Rust in wheat?')"> Yellow Rust in Wheat</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to make Jeevamrit at home?')"> Homemade Jeevamrit</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('How to get 90% subsidy on Solar Pump?')">️ Solar Pump Subsidy</button>
+          <button class="btn-pill-prompt" onclick="AIDoctorModule.sendPredefinedQuery('Can I spray pesticide in today weather?')">️ Spray Window Check</button>
         </div>
 
         <div class="chat-input-row">
@@ -379,7 +379,7 @@
     <div id="tab-schemes" class="tab-pane">
       <div class="section-header-bar">
         <div class="section-title-group">
-          <h2>🏛️ Sarkari Yojana Mitra — Government Schemes & Subsidies</h2>
+          <h2>️ Sarkari Yojana Mitra — Government Schemes & Subsidies</h2>
           <p>Find out every direct benefit, insurance scheme, and equipment subsidy tailored for your landholding profile.</p>
         </div>
       </div>
@@ -388,7 +388,7 @@
       <div class="wizard-container">
         <div class="section-header-bar" style="margin-bottom: 14px;">
           <div>
-            <h3>🎯 1-Click Farmer Scheme Eligibility Wizard</h3>
+            <h3> 1-Click Farmer Scheme Eligibility Wizard</h3>
             <p class="text-muted">Select your farm profile to calculate eligible government subsidies automatically.</p>
           </div>
         </div>
@@ -430,7 +430,7 @@
       <!-- Schemes Filters & Catalog -->
       <div class="filter-controls-bar">
         <div class="search-input-group">
-          <span class="icon">🔍</span>
+          <span class="icon" aria-hidden="true"></span>
           <input type="text" id="schemes-search-input" placeholder="Search PM-KISAN, crop insurance, solar pumps, loans..." />
         </div>
 
@@ -446,7 +446,7 @@
 
       <div class="scheme-updates-panel">
         <div>
-          <h3>🔔 Check for newly announced schemes</h3>
+          <h3> Check for newly announced schemes</h3>
           <p>We check the configured official scheme feed when available. Always verify eligibility and deadlines on the linked government portal.</p>
           <p id="scheme-update-status" class="text-muted" aria-live="polite">Official updates have not been checked in this session.</p>
         </div>
@@ -471,7 +471,7 @@
         <form id="weather-location-form" class="live-data-filters">
           <label>Village / town / city (manual) <input id="weather-location-input" name="location" value="Lucknow" required minlength="2" maxlength="100" autocomplete="address-level2" /></label>
           <button class="btn btn-primary" type="submit">Update forecast</button>
-          <button class="btn btn-outline" id="weather-auto-detect" type="button">📍 Detect my location</button>
+          <button class="btn btn-outline" id="weather-auto-detect" type="button"> Detect my location</button>
           <span id="weather-location-status" role="status" aria-live="polite"></span>
           <button class="btn btn-outline" id="weather-speak-button" type="button">Listen in Hindi</button>
         </form>
@@ -482,18 +482,18 @@
 
       <!-- General Agro-Advisory Recommendations -->
       <div style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm);">
-        <h3 style="color: var(--primary-dark); margin-bottom: 12px;">🌾 Key Seasonal Crop Directives (Rabi 2026-27)</h3>
+        <h3 style="color: var(--primary-dark); margin-bottom: 12px;"> Key Seasonal Crop Directives (Rabi 2026-27)</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
           <div style="background: #F0FDF4; border-left: 4px solid var(--primary); padding: 12px 14px; border-radius: var(--radius-sm);">
-            <strong style="color: var(--primary-dark);">🌾 Wheat Sowing Window:</strong>
+            <strong style="color: var(--primary-dark);"> Wheat Sowing Window:</strong>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Optimum sowing temperature is 20-22°C. Treat seed with Carboxin + Thiram (2g/kg seed) to prevent loose smut.</p>
           </div>
           <div style="background: #FFFBEB; border-left: 4px solid #D97706; padding: 12px 14px; border-radius: var(--radius-sm);">
-            <strong style="color: #92400E;">🌱 Mustard Aphid Caution:</strong>
+            <strong style="color: #92400E;"> Mustard Aphid Caution:</strong>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Install yellow sticky traps early. Never spray during morning bee pollination hours (8 AM to 11 AM).</p>
           </div>
           <div style="background: #EFF6FF; border-left: 4px solid #2563EB; padding: 12px 14px; border-radius: var(--radius-sm);">
-            <strong style="color: #1E40AF;">💧 Water Conservation:</strong>
+            <strong style="color: #1E40AF;"> Water Conservation:</strong>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">For small plots, irrigate at critical stages only (CRI stage at 21 days for wheat). Avoid excess flood irrigation.</p>
           </div>
         </div>
@@ -507,7 +507,7 @@
     <div id="tab-ledger" class="tab-pane">
       <div class="section-header-bar">
         <div class="section-title-group">
-          <h2>📊 Kisan Khata — Digital Farm Ledger & ROI Calculator</h2>
+          <h2> Kisan Khata — Digital Farm Ledger & ROI Calculator</h2>
           <p>Know your real cost of production per quintal and calculate true net profit per acre.</p>
         </div>
       </div>
@@ -515,7 +515,7 @@
       <div class="ledger-layout-grid">
         <!-- Input Form -->
         <div class="ledger-form-box">
-          <h3 class="ledger-form-section-title">📝 Enter Your Seasonal Farm Inputs</h3>
+          <h3 class="ledger-form-section-title"> Enter Your Seasonal Farm Inputs</h3>
           <form id="farm-ledger-form">
             <div class="ledger-input-grid">
               <div class="ledger-input-group">
@@ -596,7 +596,7 @@
     <div id="tab-community" class="tab-pane">
       <div class="section-header-bar">
         <div class="section-title-group">
-          <h2>👥 Kisan Chopal — Peer Knowledge Exchange & FPO Network</h2>
+          <h2> Kisan Chopal — Peer Knowledge Exchange & FPO Network</h2>
           <p>Real stories, cost-cutting innovations, and organic success from smallholders across India.</p>
         </div>
         <button class="btn btn-primary" onclick="App.openModal('modal-new-post')">
@@ -664,7 +664,7 @@
           <div class="form-group full-span">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
               <input type="checkbox" id="harvest-organic" />
-              <span>🌱 This harvest is Organically Grown (PGS-India / NPOP Certified or Zero-Chemical)</span>
+              <span> This harvest is Organically Grown (PGS-India / NPOP Certified or Zero-Chemical)</span>
             </label>
           </div>
 
@@ -711,7 +711,7 @@
   <div id="modal-booking" class="modal-overlay">
     <div class="modal-box">
       <button class="modal-close-btn" data-close-modal>&times;</button>
-      <h3>🚜 Book Farm Equipment</h3>
+      <h3> Book Farm Equipment</h3>
       <div id="booking-machine-details"></div>
 
       <form id="machinery-booking-form">
@@ -740,7 +740,7 @@
           <div class="form-group full-span">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 10px; border-radius: 6px;">
               <input type="checkbox" id="book-pooling-optin" checked />
-              <span><strong>🤝 Enable Neighbor Pooling:</strong> Share equipment transit with adjoining field owners for a 25% cluster discount.</span>
+              <span><strong> Enable Neighbor Pooling:</strong> Share equipment transit with adjoining field owners for a 25% cluster discount.</span>
             </label>
           </div>
         </div>
@@ -776,7 +776,7 @@
   <div id="modal-new-post" class="modal-overlay">
     <div class="modal-box">
       <button class="modal-close-btn" data-close-modal>&times;</button>
-      <h3>✍️ Share Your Farming Innovation or Experience</h3>
+      <h3>️ Share Your Farming Innovation or Experience</h3>
       <p class="text-sm text-muted">Help fellow smallholders reduce input costs, share pooling experiences, or report mandi prices.</p>
 
       <form id="new-community-post-form">
