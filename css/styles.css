@@ -2406,6 +2406,7 @@ button:hover:not(:disabled) { transform: none; }
 /* Community machinery listing and rental forms */
 .community-machinery-section { margin: 2rem 0 2.5rem; }
 .community-machinery-section .section-header-bar { margin: 1rem 0; }
+.community-machinery-section .section-header-bar .farmer-market-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 .community-machine-card { display: flex; flex-direction: column; gap: .7rem; padding: 1rem; border: 1px solid var(--border-color); background: #fafbf7; }
 .community-machine-card .machine-desc { margin: 0; }
 .community-machine-rates { display: flex; flex-wrap: wrap; gap: .8rem; color: var(--primary-dark); }
