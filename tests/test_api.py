@@ -161,6 +161,24 @@ class MarketplaceApiTests(unittest.TestCase):
         self.assertEqual(result.status_code, 201, result.text)
         self.assertIn("Rental request sent", result.json()["message"])
 
+    def test_farmer_can_view_rental_requests_for_owned_machines(self):
+        self.register("Owner Farmer", "owner-farmer@example.com", "farmer")
+        listing = self.client.post("/api/machinery/listings", json={
+            "name": "Rotavator", "category": "Rotavators", "location": "Lucknow",
+            "phone": "9876543210", "ratePerAcre": 500
+        }).json()["item"]
+        self.client.post("/api/auth/logout", json={})
+        self.register("Rental Buyer", "rental-buyer@example.com", "localBuyer")
+        self.client.post(f"/api/machinery/listings/{listing['id']}/rentals", json={
+            "phone": "9876501234", "requestedDate": "2026-11-01", "acres": 1
+        })
+        self.client.post("/api/auth/logout", json={})
+        self.client.post("/api/auth/login", json={"email": "owner-farmer@example.com", "password": "SecureTestPass123"})
+        incoming = self.client.get("/api/machinery/rentals/incoming")
+        self.assertEqual(incoming.status_code, 200, incoming.text)
+        self.assertEqual(len(incoming.json()["items"]), 1)
+        self.assertEqual(incoming.json()["items"][0]["machineName"], "Rotavator")
+
     def test_anonymous_user_cannot_publish_listing(self):
         response = self.client.post("/api/marketplace/listings", json={
             "farmerName": "Anonymous", "phone": "9876543210", "crop": "Rice",
