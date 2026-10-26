@@ -768,7 +768,8 @@ def crop_doctor_analyze(body: CropDoctorBody):
         )
         payload = {"contents":[{"parts":[{"text":prompt},{"inline_data":{"mime_type":body.mimeType,"data":body.imageBase64}}]}],
                    "generationConfig":{"responseMimeType":"application/json","temperature":0.2}}
-        endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + urllib.parse.quote(api_key)
+        model = os.getenv("GEMINI_MODEL", "gemini-3.1-8b-flash").strip() or "gemini-3.1-8b-flash"
+        endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + urllib.parse.quote(model, safe="-._") + ":generateContent?key=" + urllib.parse.quote(api_key)
         req = urllib.request.Request(endpoint, data=json.dumps(payload).encode(), headers={"Content-Type":"application/json"}, method="POST")
         with urllib.request.urlopen(req, timeout=35) as response:
             result = json.loads(response.read().decode())
