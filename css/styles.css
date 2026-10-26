@@ -2471,3 +2471,40 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 #tab-weather > div[style*="background: #FFFFFF"] > div > div { background: transparent !important; border: 0 !important; border-top: 1px solid var(--border-color) !important; border-radius: 0 !important; padding: .85rem .9rem !important; }
 #tab-weather > div[style*="background: #FFFFFF"] > div > div strong { color: var(--text-main) !important; }
 #tab-weather > div[style*="background: #FFFFFF"] > div > div p { color: var(--text-muted) !important; line-height: 1.55; }
+
+
+/* Keep the local price-report form aligned on desktop and mobile. */
+#mandi-price-report-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px 16px;
+}
+#mandi-price-report-form > label {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+#mandi-price-report-form > label input,
+#mandi-price-report-form > label select {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+#mandi-price-report-form > label small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#mandi-price-report-form > button {
+  justify-self: start;
+  align-self: end;
+}
+@media (max-width: 640px) {
+  #mandi-price-report-form { grid-template-columns: minmax(0, 1fr); }
+  #mandi-price-report-form > button { width: 100%; justify-self: stretch; }
+}
