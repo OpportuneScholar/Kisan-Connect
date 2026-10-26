@@ -23,15 +23,17 @@ const AIDoctorModule = {
     if (fileInput) {
       fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            this.handleCustomImageUpload(event.target.result, file.name);
-          };
-          reader.readAsDataURL(file);
-        }
+        if (file) this.readSelectedImage(file);
       });
     }
+
+    const fileButton = document.getElementById("btn-crop-upload-file");
+    const galleryInput = document.getElementById("crop-photo-file-input");
+    if (fileButton && galleryInput) fileButton.addEventListener("click", () => galleryInput.click());
+    if (galleryInput) galleryInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) this.readSelectedImage(file);
+    });
 
     // Audio read aloud button
     const speechBtn = document.getElementById("btn-voice-readout");
@@ -66,6 +68,17 @@ const AIDoctorModule = {
     this.runDiagnosis(diseaseId);
   },
 
+  readSelectedImage(file) {
+    if (!/^image\\/(jpeg|png|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
+      if (window.App) window.App.showToast(file.size > 8 * 1024 * 1024 ? "Choose an image smaller than 8 MB." : "Please choose a JPG, PNG or WebP image.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => this.handleCustomImageUpload(event.target.result, file.name);
+    reader.onerror = () => window.App?.showToast("Could not read this image. Please try another file.");
+    reader.readAsDataURL(file);
+  },
+
   async handleCustomImageUpload(dataUrl, fileName) {
     const previewContainer = document.getElementById("diagnosis-image-preview");
     const reportContainer = document.getElementById("diagnosis-report-container");
@@ -95,7 +108,7 @@ const AIDoctorModule = {
       previewContainer.appendChild(caption);
     }
     if (reportContainer) {
-      reportContainer.innerHTML = '<div class="ai-scanning-state"><div class="scanner-anim-ring"></div><h4>AI Crop Doctor is analysing your photo…</h4><p class="text-muted">Checking visible symptoms. This may take a few seconds.</p></div>';
+      reportContainer.innerHTML = '<div class="ai-scanning-state"><div class="scanner-anim-ring"></div><h4>Kisan Crop Doctor is assessing your photo…</h4><p class="text-muted">Checking visible symptoms. This may take a few seconds.</p></div>';
     }
     this.currentDiagnosis = null;
     const crop = document.getElementById("crop-photo-crop")?.value || "";
@@ -115,13 +128,11 @@ const AIDoctorModule = {
         const card = document.createElement("div");
         card.className = "diagnosis-card";
         const heading = document.createElement("h3");
-        heading.textContent = "Could not complete AI analysis";
+        heading.textContent = "AI analysis is currently unavailable";
         const message = document.createElement("p");
         message.textContent = error.message || "Please try again in a moment.";
-        const note = document.createElement("p");
-        note.className = "text-sm text-muted";
-        note.textContent = "If this continues, check the backend deployment logs for the Gemini error. Confirm GEMINI_API_KEY is configured on the backend (never in frontend code). For urgent crop issues, contact your local Krishi Vigyan Kendra.";
-        card.append(heading, message, note);
+        message.textContent = "AI analysis is currently unavailable. Please try again shortly.";
+        card.append(heading, message);
         reportContainer.appendChild(card);
       }
     }
