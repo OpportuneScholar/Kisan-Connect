@@ -186,5 +186,40 @@ class MarketplaceApiTests(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 401)
 
+    def test_crop_doctor_reports_missing_backend_key_clearly(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GEMINI_API_KEY": ""}):
+            response = self.client.post("/api/crop-doctor/analyze", json={
+                "imageBase64": "A" * 120, "mimeType": "image/jpeg", "crop": "Wheat"
+            })
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("GEMINI_API_KEY", response.json()["detail"])
+
+    def test_crop_doctor_translates_gemini_permission_error(self):
+        import urllib.error
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}):
+            with patch("app.urllib.request.urlopen", side_effect=urllib.error.HTTPError(
+                "https://example.invalid", 403, "Forbidden", {}, None
+            )):
+                response = self.client.post("/api/crop-doctor/analyze", json={
+                    "imageBase64": "A" * 120, "mimeType": "image/jpeg", "crop": "Wheat"
+                })
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("access was denied", response.json()["detail"])
+
+    def test_crop_doctor_translates_gemini_quota_error(self):
+        import urllib.error
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}):
+            with patch("app.urllib.request.urlopen", side_effect=urllib.error.HTTPError(
+                "https://example.invalid", 429, "Too Many Requests", {}, None
+            )):
+                response = self.client.post("/api/crop-doctor/analyze", json={
+                    "imageBase64": "A" * 120, "mimeType": "image/jpeg", "crop": "Wheat"
+                })
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("quota or rate limit", response.json()["detail"])
+
 if __name__ == "__main__":
     unittest.main()
