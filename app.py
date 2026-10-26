@@ -504,24 +504,65 @@ def weather_forecast(location: str = "Lucknow"):
 
 
 def _gov_mandi_prices(commodity: str, state: str, district: str, market: str, limit: int):
+    """Fetch official AGMARKNET rows, tolerating data.gov.in filter-field variations."""
     api_key = os.getenv("DATA_GOV_IN_API_KEY", "").strip()
     if not api_key:
         return None
     resource_id = os.getenv("AGMARKNET_RESOURCE_ID", "9ef84268-d588-465a-a308-a864a43d0070").strip()
-    params = {"api-key": api_key, "format": "json", "limit": min(max(limit, 1), 100), "sort[arrival_date]": "desc"}
-    # The AGMARKNET resource exposes state as a keyword field; using filters[state]
-    # can return an empty set even when matching records exist.
-    for field, value in (("commodity", commodity), ("state.keyword", state), ("district", district), ("market", market)):
-        if value:
-            params[f"filters[{field}]"] = value
-    url = f"https://api.data.gov.in/resource/{urllib.parse.quote(resource_id)}?{urllib.parse.urlencode(params)}"
-    data = _http_json(url, timeout=15)
-    records = data.get("records") or []
+    base = {"api-key": api_key, "format": "json", "limit": min(max(limit, 1), 100), "sort[arrival_date]": "desc"}
+    full_filters = []
+    if commodity:
+        full_filters.append(("commodity", commodity))
+    if state:
+        full_filters.append(("state.keyword", state))
+    if district:
+        full_filters.append(("district", district))
+    if market:
+        full_filters.append(("market", market))
+    attempts = [(full_filters, False)]
+    if state:
+        alternate = [(field, value) for field, value in full_filters if field != "state.keyword"]
+        alternate.insert(0, ("state", state))
+        attempts.extend([(alternate, False), ([("state.keyword", state)], True), ([("state", state)], True)])
+
+    records, seen = [], set()
+    for filters, _broad in attempts:
+        signature = tuple(filters)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        params = dict(base)
+        for field, value in filters:
+            if value:
+                params[f"filters[{field}]"] = value
+        url = f"https://api.data.gov.in/resource/{urllib.parse.quote(resource_id)}?{urllib.parse.urlencode(params)}"
+        try:
+            payload = _http_json(url, timeout=15)
+            candidate = payload.get("records") or []
+        except Exception:
+            continue
+        if candidate:
+            records = candidate
+            break
+
     rows = []
     for row in records:
+        row_state = str(row.get("state", "")).strip()
+        row_district = str(row.get("district", "")).strip()
+        row_commodity = str(row.get("commodity", "")).strip()
+        row_market = str(row.get("market", "")).strip()
+        # Filter locally too: the API's exact-match filters can differ by resource version.
+        if state and state.casefold() not in row_state.casefold():
+            continue
+        if district and district.casefold() not in row_district.casefold():
+            continue
+        if commodity and commodity.casefold() not in row_commodity.casefold():
+            continue
+        if market and market.casefold() not in row_market.casefold():
+            continue
         try:
-            rows.append({"commodity": row.get("commodity", ""), "variety": row.get("variety", ""), "market": row.get("market", ""),
-                         "district": row.get("district", ""), "state": row.get("state", ""), "arrivalDate": row.get("arrival_date", ""),
+            rows.append({"commodity": row_commodity, "variety": row.get("variety", ""), "market": row_market,
+                         "district": row_district, "state": row_state, "arrivalDate": row.get("arrival_date", ""),
                          "minPrice": float(row.get("min_price")), "maxPrice": float(row.get("max_price")), "modalPrice": float(row.get("modal_price")),
                          "unit": "₹/quintal", "source": "AGMARKNET / data.gov.in", "verifiedSource": True})
         except (TypeError, ValueError):
