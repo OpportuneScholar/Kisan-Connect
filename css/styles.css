@@ -2508,3 +2508,11 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
   #mandi-price-report-form { grid-template-columns: minmax(0, 1fr); }
   #mandi-price-report-form > button { width: 100%; justify-self: stretch; }
 }
+
+/* Focused UX fixes: homepage-only hero and accessible crop photo actions. */
+.hero-banner[hidden] { display: none !important; }
+.crop-upload-controls { display: grid; gap: 12px; }
+.crop-upload-controls .upload-drop-zone { min-height: 170px; }
+.crop-upload-controls .upload-icon { color: #176b45; }
+.crop-file-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; }
+.crop-upload-help { margin: 0; line-height: 1.5; }
