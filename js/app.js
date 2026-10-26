@@ -151,7 +151,14 @@ const App = {
       }
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Keep the selected panel heading visible below the sticky navigation.
+    const activePane = document.getElementById(tabId);
+    if (activePane) {
+      const stickyNav = document.querySelector(".desktop-nav-bar");
+      const navHeight = stickyNav ? stickyNav.getBoundingClientRect().height : 0;
+      const targetTop = activePane.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
+    }
     window.location.hash = tabId;
   },
 
