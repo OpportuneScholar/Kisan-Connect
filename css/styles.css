@@ -2532,3 +2532,16 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 .chat-msg .msg-bubble { overflow-wrap: anywhere; line-height: 1.55; }
 #btn-send-chat:disabled { opacity: .7; cursor: wait; }
 @media (max-width: 760px) { .disease-samples-grid { grid-template-columns: 1fr; } }
+
+
+/* Kisan Connect homepage hero: agricultural field photo with readable green overlay. */
+.hero-banner { position:relative; isolation:isolate; overflow:hidden; background:linear-gradient(90deg,rgba(11,43,27,.91) 0%,rgba(21,73,43,.78) 48%,rgba(21,73,43,.28) 100%),url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2200&q=85") center 54%/cover no-repeat,linear-gradient(135deg,#1B4332 0%,#2D6A4F 60%,#40916C 100%); min-height:340px; display:flex; align-items:center; }
+.hero-banner .hero-inner { width:100%; padding:12px 0; }
+.hero-banner .hero-title { max-width:780px; text-shadow:0 2px 14px rgba(0,0,0,.22); }
+.hero-banner .hero-desc { color:#F2FFF5; text-shadow:0 1px 8px rgba(0,0,0,.22); }
+.hero-banner .hero-note { max-width:800px; color:#F1F5F2; }
+.scheme-updates-panel { align-items:center; }
+.scheme-updates-panel #btn-check-scheme-updates[disabled] { opacity:.7; cursor:wait; }
+.scheme-live-source-links { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.scheme-live-source-links a { display:inline-flex; padding:7px 11px; border:1px solid var(--border-color); border-radius:8px; background:#fff; font-weight:600; }
+@media (max-width:700px) { .hero-banner { min-height:300px; background-position:58% center; } .hero-banner .hero-title { font-size:1.8rem; } }
