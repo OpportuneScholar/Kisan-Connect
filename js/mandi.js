@@ -253,8 +253,15 @@ const MandiModule = {
     }
     const original = button?.textContent || "📍 Detect location";
     if (button) { button.disabled = true; button.textContent = "Detecting…"; }
-    setStatus("Allow location permission to find your state and district…");
+    setStatus("Loading district list and checking your location…");
     try {
+      // The district JSON loads asynchronously during page startup. Waiting here prevents
+      // a valid GPS result being treated as an unknown state because the list is still empty.
+      if (this.locationControlsReady) await this.locationControlsReady;
+      if (!Array.isArray(this.indiaAdminDivisions) || !this.indiaAdminDivisions.length) {
+        throw new Error("The state/district list did not load. Please choose your location manually.");
+      }
+      setStatus("Allow location permission to find your state and district…");
       const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: false, timeout: 15000, maximumAge: 300000
       }));
@@ -289,11 +296,31 @@ const MandiModule = {
         }
       }
       if (!stateName) throw new Error("Could not identify your state. Please select it manually.");
-      const state = (this.indiaAdminDivisions || []).find(item => item.name.toLowerCase() === stateName.toLowerCase() || item.name.toLowerCase().includes(stateName.toLowerCase()));
+      const stateAliases = {
+        "uttar pradesh": ["uttar pradesh", "up"],
+        "uttarakhand": ["uttarakhand", "uttaranchal"],
+        "odisha": ["odisha", "orissa"],
+        "delhi": ["delhi", "nct of delhi", "national capital territory of delhi"],
+        "jammu and kashmir": ["jammu and kashmir", "jammu & kashmir"],
+        "puducherry": ["puducherry", "pondicherry"]
+      };
+      const normalizeAdmin = value => String(value || "").normalize("NFKD").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase();
+      const detectedState = normalizeAdmin(stateName);
+      const state = (this.indiaAdminDivisions || []).find(item => {
+        const catalogueName = normalizeAdmin(item.name);
+        const aliases = stateAliases[catalogueName] || [catalogueName];
+        return aliases.some(alias => normalizeAdmin(alias) === detectedState) ||
+          catalogueName === detectedState;
+      });
       if (!state) throw new Error(`Detected state: ${stateName}. Please select it manually from the list.`);
       stateSelect.value = state.name;
       stateSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      const district = (state.districts || []).find(item => item.name.toLowerCase() === districtName.toLowerCase() || item.name.toLowerCase().includes(districtName.toLowerCase()) || districtName.toLowerCase().includes(item.name.toLowerCase()));
+      const normalizedDistrict = normalizeAdmin(districtName);
+      const district = (state.districts || []).find(item => {
+        const candidate = normalizeAdmin(item.name);
+        return candidate === normalizedDistrict ||
+          (normalizedDistrict.length > 2 && (candidate.includes(normalizedDistrict) || normalizedDistrict.includes(candidate)));
+      });
       if (district) districtSelect.value = district.name;
       else if (districtName) { districtSelect.add(new Option(districtName, districtName)); districtSelect.value = districtName; }
       districtSelect.dispatchEvent(new Event("change", { bubbles: true }));
@@ -308,7 +335,8 @@ const MandiModule = {
   },
 
   setupLiveDataListeners() {
-    this.initIndiaLocationControls();
+    // Keep the async district catalogue ready before location detection can use it.
+    this.locationControlsReady = this.initIndiaLocationControls();
     document.getElementById("btn-load-live-mandi")?.addEventListener("click", () => this.loadLivePrices());
     document.getElementById("btn-detect-mandi-location")?.addEventListener("click", () => this.detectMandiLocation());
     document.getElementById("mandi-price-report-form")?.addEventListener("submit", async event => {
