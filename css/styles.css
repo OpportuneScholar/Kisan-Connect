@@ -2516,3 +2516,10 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 .crop-upload-controls .upload-icon { color: #176b45; }
 .crop-file-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; }
 .crop-upload-help { margin: 0; line-height: 1.5; }
+
+/* Tab navigation: keep the active section heading visible after switching. */
+.tab-pane { scroll-margin-top: 165px; }
+#disease-samples-grid { min-height: 90px; }
+.sample-leaf-card { text-align: left; }
+.sample-leaf-card .badge { align-self: flex-start; margin-top: 5px; }
+@media (max-width: 768px) { .tab-pane { scroll-margin-top: 160px; } }
