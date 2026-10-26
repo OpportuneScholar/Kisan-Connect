@@ -2464,3 +2464,10 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 @media (display-mode: standalone) and (min-width: 769px) {
   .pwa-installed .mobile-bottom-bar { display: none; }
 }
+
+/* Seasonal crop guidance: restrained, readable rows instead of colorful card stripes. */
+#tab-weather > div[style*="background: #FFFFFF"] { background: #fafbf7 !important; border: 1px solid var(--border-color) !important; border-radius: 8px !important; padding: 1rem !important; box-shadow: none !important; }
+#tab-weather > div[style*="background: #FFFFFF"] > div { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)) !important; gap: 0 !important; }
+#tab-weather > div[style*="background: #FFFFFF"] > div > div { background: transparent !important; border: 0 !important; border-top: 1px solid var(--border-color) !important; border-radius: 0 !important; padding: .85rem .9rem !important; }
+#tab-weather > div[style*="background: #FFFFFF"] > div > div strong { color: var(--text-main) !important; }
+#tab-weather > div[style*="background: #FFFFFF"] > div > div p { color: var(--text-muted) !important; line-height: 1.55; }
