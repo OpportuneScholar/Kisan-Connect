@@ -526,6 +526,7 @@ def _gov_mandi_prices(commodity: str, state: str, district: str, market: str, li
         attempts.extend([(alternate, False), ([("state.keyword", state)], True), ([("state", state)], True)])
 
     records, seen = [], set()
+    successful_response = False
     for filters, _broad in attempts:
         signature = tuple(filters)
         if signature in seen:
@@ -538,12 +539,19 @@ def _gov_mandi_prices(commodity: str, state: str, district: str, market: str, li
         url = f"https://api.data.gov.in/resource/{urllib.parse.quote(resource_id)}?{urllib.parse.urlencode(params)}"
         try:
             payload = _http_json(url, timeout=15)
+            successful_response = True
             candidate = payload.get("records") or []
-        except Exception:
+        except Exception as exc:
+            # Keep upstream failures distinguishable from a successful query with zero matches.
+            logger.warning("AGMARKNET request failed (resource=%s, filters=%s): %s", resource_id, filters, exc)
             continue
         if candidate:
             records = candidate
             break
+
+    if not successful_response:
+        # None means provider failure; [] means provider responded but returned no matching rows.
+        return None
 
     rows = []
     for row in records:
