@@ -13,7 +13,7 @@ const AIDoctorModule = {
     this.renderSampleThumbnails();
     this.setupListeners();
     this.initChatbot();
-    // Pre-load default diagnosis
+    // Always render a visible reference diagnosis so the panel is useful even before a photo is uploaded.
     this.runDiagnosis("wheat-rust");
   },
 
@@ -48,7 +48,12 @@ const AIDoctorModule = {
     const container = document.getElementById("disease-samples-grid");
     if (!container) return;
 
-    container.innerHTML = KISAN_DATA.cropDiseases.map(d => {
+    const diseases = (KISAN_DATA.cropDiseases || []).slice(0, 6);
+    if (!diseases.length) {
+      container.innerHTML = '<p class="text-sm text-muted">Crop reference guides are temporarily unavailable. Refresh the page to retry.</p>';
+      return;
+    }
+    container.innerHTML = diseases.map(d => {
       const isSelected = d.id === this.selectedSampleId;
       return `
         <div class="sample-leaf-card ${isSelected ? 'active' : ''}" onclick="AIDoctorModule.selectSample('${d.id}')">
@@ -130,8 +135,7 @@ const AIDoctorModule = {
         const heading = document.createElement("h3");
         heading.textContent = "AI analysis is currently unavailable";
         const message = document.createElement("p");
-        message.textContent = error.message || "Please try again in a moment.";
-        message.textContent = "AI analysis is currently unavailable. Please try again shortly.";
+        message.textContent = "AI photo analysis is temporarily unavailable. You can still use the six crop-health reference guides and Kisan Sahayak quick answers below.";
         card.append(heading, message);
         reportContainer.appendChild(card);
       }
@@ -349,18 +353,25 @@ const AIDoctorModule = {
 
     this.appendUserMessage(userText);
     input.value = "";
-
-    // Generate intelligent agronomist response
-    setTimeout(() => {
-      const botResponse = this.generateAgriResponse(userText);
-      this.appendBotMessage(botResponse);
-    }, 500);
+    const sendBtn = document.getElementById("btn-send-chat");
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "Thinking…"; }
+    // Keep the local quick-answer experience reliable without depending on an external API.
+    window.setTimeout(() => {
+      try {
+        const botResponse = this.generateAgriResponse(userText);
+        this.appendBotMessage(botResponse);
+      } catch (error) {
+        this.appendBotMessage("Sorry, I couldn't prepare an answer just now. Please try your question again.");
+      } finally {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send ↗"; }
+      }
+    }, 250);
   },
 
   generateAgriResponse(query) {
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
 
-    if (q.includes("rust") || q.includes("रतुआ") || q.includes("yellow")) {
+    if (q.includes("rust") || q.includes("रतुआ") || q.includes("yellow") || q.includes("wheat disease")) {
       return "🌾 **Yellow Rust (पीला रतुआ) Alert**: Cool foggy weather accelerates this fungal disease. **Immediate step**: Spray Propiconazole 25% EC @ 1ml/litre water (200ml per acre). For organic control, spray 4-day sour buttermilk (खट्टी छाछ 5L in 200L water). Avoid heavy nitrogen urea top-dressing right now.";
     }
 
@@ -368,7 +379,7 @@ const AIDoctorModule = {
       return "🌱 **Fertilizer & Nano Urea Advisory**: Excessive broadcast urea causes soft vegetative growth vulnerable to pests. Switch to **IFFCO Nano Urea (liquid)**: 1 bottle (500ml @ ₹225) replaces 1 full 45kg bag of conventional urea! Spray at 30-35 days after sowing during active tillering with 100-125 litres of water per acre.";
     }
 
-    if (q.includes("jeevamrit") || q.includes("जीवामृत") || q.includes("organic")) {
+    if (q.includes("jeevamrit") || q.includes("जीवामृत") || q.includes("organic") || q.includes("homemade")) {
       return "🧪 **Home-made Jeevamrit Recipe (for 1 Acre)**: Mix 10kg fresh desi cow dung + 10L cow urine + 2kg jaggery (Gur) + 2kg besan (chickpea flour) + handful of fertile bund soil in 200L water. Stir clockwise twice daily for 4-5 days. Filter and apply through irrigation water or foliar spray to enrich active soil microbes.";
     }
 
@@ -380,8 +391,8 @@ const AIDoctorModule = {
       return "🏛️ **PM-KISAN Samman Nidhi**: Eligible farmers receive ₹6,000/year in 3 quarterly DBT installments of ₹2,000. **Requirements**: 1) Aadhaar e-KYC completed, 2) Land record seeded with state revenue portal, 3) NPCI Aadhaar bank account mapping active. Check status at pmkisan.gov.in or call 155261.";
     }
 
-    if (q.includes("spray") || q.includes("rain") || q.includes("weather") || q.includes("छिड़काव")) {
-      return "🌦️ **Spray Window Advisory**: Check today's wind velocity (<10 km/h) and rain probability. Avoid spraying when rain is forecasted within 24 hours. Always add 1ml surfactant/soap per litre of spray solution to prevent droplet bounce and improve leaf absorption.";
+    if (q.includes("spray") || q.includes("rain") || q.includes("weather") || q.includes("छिड़काव") || q.includes("window")) {
+      return "🌦️ **Spray Window Advisory**: I can't verify your exact field weather from this quick-answer demo. Check the Weather & Advisory tab for your location, avoid spraying during strong wind or before expected rain, follow the product label, and wear protective equipment. Don't add a surfactant unless the product label recommends it.";
     }
 
     if (q.includes("mandi") || q.includes("price") || q.includes("rate") || q.includes("भाव")) {
