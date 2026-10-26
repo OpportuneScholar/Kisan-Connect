@@ -46,22 +46,28 @@ const SchemesModule = {
   async checkOfficialUpdates(manual = false) {
     const status = document.getElementById("scheme-update-status");
     const container = document.getElementById("scheme-live-updates");
+    const button = document.getElementById("btn-check-scheme-updates");
     if (!status || !container) return;
-    status.textContent = "Checking configured official scheme feed…";
+    if (button) { button.disabled = true; button.textContent = "Checking official sources…"; }
+    status.textContent = "Checking the connected official scheme feed…";
     try {
-      const response = await fetch("/api/schemes/updates", { headers: { "Accept": "application/json" } });
+      const response = await fetch("/api/schemes/updates", { headers: { "Accept": "application/json" }, cache: "no-store" });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.detail || "Official update feed unavailable");
       const items = Array.isArray(payload.items) ? payload.items : [];
-      status.textContent = payload.message || `Checked at ${new Date().toLocaleString()}.`;
+      const checkedAt = payload.checkedAt ? new Date(payload.checkedAt).toLocaleString() : new Date().toLocaleString();
+      status.textContent = (payload.message || "Official scheme feed checked.") + " Last checked: " + checkedAt + ".";
       if (!items.length) {
-        container.innerHTML = `<div class="empty-state"><h3>No new scheme announcements returned</h3><p>This does not mean no new schemes exist. Check the official portals below.</p><p><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">myScheme.gov.in</a> · <a href="https://www.pib.gov.in/" target="_blank" rel="noopener">PIB</a> · <a href="https://www.india.gov.in/" target="_blank" rel="noopener">India.gov.in</a></p></div>`;
+        const notConnected = payload.source === "official_portals";
+        container.innerHTML = `<div class="empty-state"><h3>${notConnected ? "Automatic scheme sync is not connected yet" : "No new announcements returned by the connected feed"}</h3><p>${notConnected ? "The refresh request reached the backend, but no authorized official feed is configured. Existing scheme cards remain available below. Connect an approved myScheme/API Setu feed or another authorized government feed to import current listings." : "This does not mean no new schemes exist. Verify the latest notices on the official portals."}</p><div class="scheme-live-source-links"><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">Browse myScheme ↗</a><a href="https://www.india.gov.in/my-government/schemes" target="_blank" rel="noopener">India.gov.in schemes ↗</a><a href="https://www.pib.gov.in/" target="_blank" rel="noopener">PIB announcements ↗</a></div></div>`;
         return;
       }
       container.innerHTML = items.map(item => `<article class="scheme-card"><h3>${this.escapeHtml(item.title || item.name || "Government scheme update")}</h3><p>${this.escapeHtml(item.summary || item.description || "Open the official source for details.")}</p><p class="text-muted">${this.escapeHtml(item.date || item.publishedAt || "")}</p><a class="btn btn-primary btn-sm" href="${this.safeUrl(item.url || item.link)}" target="_blank" rel="noopener">Open official notice ↗</a></article>`).join("");
     } catch (error) {
-      status.textContent = "Live scheme feed is not configured or temporarily unavailable. Use the official portals below to verify new announcements.";
-      container.innerHTML = `<div class="empty-state"><p><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">myScheme.gov.in</a> · <a href="https://www.pib.gov.in/" target="_blank" rel="noopener">Press Information Bureau</a> · <a href="https://www.india.gov.in/" target="_blank" rel="noopener">India.gov.in</a></p></div>`;
+      status.textContent = "The official scheme feed could not be reached. Existing scheme listings are still available below.";
+      container.innerHTML = `<div class="empty-state"><p>Check official sources for current announcements:</p><div class="scheme-live-source-links"><a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener">myScheme ↗</a><a href="https://www.india.gov.in/my-government/schemes" target="_blank" rel="noopener">India.gov.in schemes ↗</a><a href="https://www.pib.gov.in/" target="_blank" rel="noopener">PIB ↗</a></div></div>`;
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "Refresh official schemes"; }
     }
   },
 
