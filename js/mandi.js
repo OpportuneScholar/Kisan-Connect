@@ -354,13 +354,13 @@ const MandiModule = {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Market data is temporarily unavailable.");
       if (status) {
-        status.textContent = data.mode === "official" ? "Official government data" : (data.officialStatus === "temporarily_unavailable" ? "Government feed unavailable" : "Community reports only");
+        status.textContent = data.mode === "official" ? "Official government data" : (data.officialStatus === "not_configured" ? "Official feed not configured" : data.officialStatus === "temporarily_unavailable" ? "Government feed unavailable" : data.officialStatus === "no_matching_records" ? "No official match for these filters" : "Community reports");
         status.className = `badge ${data.mode === "official" ? "badge-success" : "badge-neutral"}`;
       }
 
       if (!data.items || !data.items.length) {
         const setupHint = data.officialStatus === "not_configured"
-          ? ' <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a> and add it to the server environment.'
+          ? ' <a href="https://data.gov.in/" target="_blank" rel="noopener">Get a data.gov.in API key</a>. Add DATA_GOV_IN_API_KEY to the backend hosting environment, then restart/redeploy the backend.'
           : data.officialStatus === "temporarily_unavailable"
             ? " The official feed is configured but is temporarily unavailable; please retry later."
             : " Try clearing the mandi name or changing the crop/district to find matching official records.";
