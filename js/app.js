@@ -12,6 +12,9 @@ const App = {
     this.detectInstalledAppMode();
     this.loadSavedLanguage();
     this.setupTabs();
+    document.body.dataset.currentTab = this.currentTab;
+    const homeHero = document.querySelector(".hero-banner");
+    if (homeHero) homeHero.hidden = this.currentTab !== "tab-mandi";
     this.setupModals();
     this.setupLanguageSwitcher();
     this.setupVoiceAssistant();
@@ -126,6 +129,9 @@ const App = {
 
   switchTab(tabId) {
     this.currentTab = tabId;
+    document.body.dataset.currentTab = tabId;
+    const hero = document.querySelector(".hero-banner");
+    if (hero) hero.hidden = tabId !== "tab-mandi";
 
     // Update tab buttons
     document.querySelectorAll(".nav-tab-btn, .mobile-nav-btn").forEach(btn => {
