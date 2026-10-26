@@ -69,7 +69,7 @@ const AIDoctorModule = {
   },
 
   readSelectedImage(file) {
-    if (!/^image\\/(jpeg|png|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
       if (window.App) window.App.showToast(file.size > 8 * 1024 * 1024 ? "Choose an image smaller than 8 MB." : "Please choose a JPG, PNG or WebP image.");
       return;
     }
