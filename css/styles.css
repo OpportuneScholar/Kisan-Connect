@@ -2523,3 +2523,12 @@ body.pwa-installed { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px
 .sample-leaf-card { text-align: left; }
 .sample-leaf-card .badge { align-self: flex-start; margin-top: 5px; }
 @media (max-width: 768px) { .tab-pane { scroll-margin-top: 160px; } }
+
+/* Keep the crop doctor usable on first open and make chat replies legible. */
+.disease-samples-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.disease-samples-grid .sample-leaf-card { cursor: pointer; min-width: 0; }
+.diagnosis-report-container, #diagnosis-report-container { min-width: 0; }
+.chat-messages-area { color: #17211b; scroll-behavior: smooth; }
+.chat-msg .msg-bubble { overflow-wrap: anywhere; line-height: 1.55; }
+#btn-send-chat:disabled { opacity: .7; cursor: wait; }
+@media (max-width: 760px) { .disease-samples-grid { grid-template-columns: 1fr; } }
