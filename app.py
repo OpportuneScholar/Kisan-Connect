@@ -714,7 +714,8 @@ class CropDoctorBody(BaseModel):
 def crop_doctor_analyze(body: CropDoctorBody):
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        raise HTTPException(status_code=503, detail="AI Crop Doctor is not configured yet. Set GEMINI_API_KEY on the server.")
+        logger.error("Crop Doctor request rejected: GEMINI_API_KEY is missing from the backend environment.")
+        raise HTTPException(status_code=503, detail="AI Crop Doctor is not configured on the backend. Verify GEMINI_API_KEY in the backend service environment, then restart/redeploy it.")
     if len(body.imageBase64) > 11_000_000:
         raise HTTPException(status_code=413, detail="Image is too large. Upload a smaller image (maximum 8 MB).")
     try:
