@@ -198,7 +198,7 @@ class MarketplaceApiTests(unittest.TestCase):
     def test_crop_doctor_uses_configured_gemini_model(self):
         import urllib.error
         from unittest.mock import patch
-        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.1-8b-flash"}):
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.8-flash"}):
             with patch("app.urllib.request.urlopen", side_effect=urllib.error.HTTPError(
                 "https://example.invalid", 403, "Forbidden", {}, None
             )) as request:
@@ -206,7 +206,7 @@ class MarketplaceApiTests(unittest.TestCase):
                     "imageBase64": "A" * 120, "mimeType": "image/jpeg", "crop": "Wheat"
                 })
         self.assertEqual(response.status_code, 502)
-        self.assertIn("/models/gemini-3.1-8b-flash:generateContent", request.call_args.args[0].full_url)
+        self.assertIn("/models/gemini-3.8-flash:generateContent", request.call_args.args[0].full_url)
 
     def test_crop_doctor_translates_gemini_permission_error(self):
         import urllib.error
