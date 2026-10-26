@@ -193,11 +193,8 @@ const MandiModule = {
         resetMarkets();
         this.loadMandiMarkets();
       });
-      reportMarket?.addEventListener("focus", () => this.loadMandiMarkets(reportMarket.value));
-      reportMarket?.addEventListener("input", () => {
-        clearTimeout(this._marketLookupTimer);
-        this._marketLookupTimer = setTimeout(() => this.loadMandiMarkets(reportMarket.value), 180);
-      });
+      // Load suggestions once on focus; the browser filters the datalist as the user types.
+      reportMarket?.addEventListener("focus", () => this.loadMandiMarkets(""));
       reportCommodity?.addEventListener("change", () => {
         const liveCommodity = document.getElementById("live-mandi-commodity");
         if (liveCommodity && reportCommodity.value) liveCommodity.value = reportCommodity.value;
