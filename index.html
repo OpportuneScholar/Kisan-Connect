@@ -314,12 +314,17 @@
       <div class="doctor-layout-grid">
         <!-- Left: Upload & Specimen Selector -->
         <div class="doctor-upload-sidebar">
-          <label for="crop-photo-input" class="upload-drop-zone">
-            <div class="upload-icon"></div>
-            <strong>Upload Leaf / Crop Photo</strong>
-            <p class="text-sm text-muted">Click to select photo from phone or gallery (JPG, PNG or WebP; max 8 MB)</p>
-            <input type="file" id="crop-photo-input" accept="image/jpeg,image/png,image/webp" style="display: none;" />
-          </label>
+          <div class="crop-upload-controls">
+            <input type="file" id="crop-photo-input" accept="image/jpeg,image/png,image/webp" capture="environment" hidden />
+            <input type="file" id="crop-photo-file-input" accept="image/jpeg,image/png,image/webp" hidden />
+            <label for="crop-photo-input" class="upload-drop-zone" tabindex="0" role="button" aria-label="Take a crop photo using your camera">
+              <span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+              <strong>Take a crop photo</strong>
+              <p class="text-sm text-muted">Open your camera or capture a new leaf photo.</p>
+            </label>
+            <button type="button" id="btn-crop-upload-file" class="btn btn-outline crop-file-button"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M13 3v6h6M12 16l8-8M16 8h4v4"/></svg> Upload from Gallery / Files</button>
+            <p class="text-sm text-muted crop-upload-help">JPG, PNG or WebP · Maximum 8 MB.</p>
+          </div>
           <label for="crop-photo-crop" class="text-sm">Crop type (optional)
             <select id="crop-photo-crop" class="form-control">
               <option value="">Not sure / let AI assess</option>
