@@ -3,6 +3,7 @@ import hmac
 import os
 import secrets
 import json
+import logging
 import time
 import urllib.parse
 import urllib.request
@@ -17,6 +18,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, select, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+
+logger = logging.getLogger("kisan_connect.crop_doctor")
 
 ROOT = Path(__file__).resolve().parent
 
@@ -736,8 +739,34 @@ def crop_doctor_analyze(body: CropDoctorBody):
         return {"source":"Gemini Vision","disclaimer":"AI suggestions can be wrong. Confirm diagnosis with a qualified agricultural expert; follow only approved product labels.","analysis":parsed}
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=502, detail="The vision service could not analyse this image right now. Please retry or contact a local agricultural expert.")
+    except urllib.error.HTTPError as exc:
+        # Do not log the request URL: the Gemini API key is included in its query string.
+        try:
+            provider_error = exc.read().decode("utf-8", errors="replace")[:1200]
+        except Exception:
+            provider_error = ""
+        logger.error("Gemini Crop Doctor HTTP failure status=%s provider_response=%s", exc.code, provider_error or "(empty)")
+        if exc.code in (401, 403):
+            detail = "Gemini API access was denied. Verify GEMINI_API_KEY in the backend environment and confirm Gemini API access is enabled."
+        elif exc.code == 429:
+            detail = "Gemini quota or rate limit reached. Check API quota/billing and retry later."
+        elif exc.code in (400, 404):
+            detail = "Gemini rejected the request or model. Check the model/API access and image format in backend logs."
+        else:
+            detail = "Gemini is temporarily unable to analyse this photo. Check backend logs and retry."
+        raise HTTPException(status_code=502, detail=detail) from exc
+    except urllib.error.URLError as exc:
+        logger.error("Gemini Crop Doctor network failure: %s", getattr(exc, "reason", "unknown network error"))
+        raise HTTPException(status_code=502, detail="The backend could not connect to Gemini. Check service network access and retry.") from exc
+    except TimeoutError as exc:
+        logger.error("Gemini Crop Doctor request timed out after 35 seconds.")
+        raise HTTPException(status_code=504, detail="Gemini analysis timed out. Try a smaller photo.") from exc
+    except (json.JSONDecodeError, ValueError) as exc:
+        logger.error("Gemini Crop Doctor returned an invalid response (%s).", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Gemini returned an unreadable response. Please retry.") from exc
+    except Exception as exc:
+        logger.exception("Unexpected Crop Doctor failure (%s).", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="AI analysis failed unexpectedly. Check backend logs and retry.") from exc
 
 @app.get("/api/schemes/updates")
 def scheme_updates():
