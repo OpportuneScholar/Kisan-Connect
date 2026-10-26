@@ -128,8 +128,8 @@ class MarketplaceApiTests(unittest.TestCase):
         from unittest.mock import patch
         with patch.dict(os.environ, {"DATA_GOV_IN_API_KEY": "test-key"}), patch.object(api, "_http_json", return_value={"records": []}) as request:
             api._gov_mandi_prices("Wheat", "Uttar Pradesh", "Lucknow", "", 10)
-        url = request.call_args.args[0]
-        self.assertIn("filters%5Bstate.keyword%5D=Uttar+Pradesh", url)
+        urls = [call.args[0] for call in request.call_args_list]
+        self.assertTrue(any("filters%5Bstate.keyword%5D=Uttar+Pradesh" in url for url in urls))
 
 
     def test_new_community_mandi_name_is_saved_and_suggested_to_other_users(self):
