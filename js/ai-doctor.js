@@ -120,7 +120,7 @@ const AIDoctorModule = {
         message.textContent = error.message || "Please try again in a moment.";
         const note = document.createElement("p");
         note.className = "text-sm text-muted";
-        note.textContent = "Check that the service is running and GEMINI_API_KEY is saved in the Voroa environment. For urgent crop issues, contact your local Krishi Vigyan Kendra.";
+        note.textContent = "If this continues, check the backend deployment logs for the Gemini error. Confirm GEMINI_API_KEY is configured on the backend (never in frontend code). For urgent crop issues, contact your local Krishi Vigyan Kendra.";
         card.append(heading, message, note);
         reportContainer.appendChild(card);
       }
