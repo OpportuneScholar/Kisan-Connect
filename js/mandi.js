@@ -223,10 +223,17 @@ const MandiModule = {
       const response = await fetch("/api/mandi/markets?" + params, { credentials: "same-origin" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Could not load market names.");
-      const names = data.items || [];
+      const officialNames = Array.isArray(data.items) ? data.items : [];
+      const savedNames = Array.isArray(data.savedItems) ? data.savedItems : [];
+      // Include community-saved local mandis as well as official market names.
+      // The API keeps these separate so locally reported prices remain usable when
+      // AGMARKNET has no matching official market record.
+      const names = [...new Set([...officialNames, ...savedNames].map(name => String(name || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
       if (liveSelect) {
         const selected = liveSelect.value;
-        liveSelect.replaceChildren(new Option(names.length ? "Select official mandi" : "No official markets found", ""), ...names.map(name => new Option(name, name)));
+        const placeholder = names.length ? "Select mandi (official + community)" : "No saved mandis yet — enter one below";
+        liveSelect.replaceChildren(new Option(placeholder, ""), ...names.map(name => new Option(name, name)));
         if (names.includes(selected)) liveSelect.value = selected;
       }
       if (datalist) datalist.replaceChildren(...(data.suggestions || []).map(name => new Option(name, name)));
