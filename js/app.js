@@ -51,24 +51,6 @@ const App = {
     if (select) select.value = this.currentLang;
     this.updateDocumentLanguage(this.currentLang);
     this.applyTranslations(this.currentLang);
-    this.applyGoogleTranslation(this.currentLang);
-  },
-
-  applyGoogleTranslation(lang) {
-    // Google Translate translates the whole page, including untagged text and dynamically rendered cards.
-    const apply = () => {
-      const combo = document.querySelector(".goog-te-combo");
-      if (!combo) return false;
-      combo.value = lang;
-      combo.dispatchEvent(new Event("change", { bubbles: true }));
-      return true;
-    };
-    if (apply()) return;
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts += 1;
-      if (apply() || attempts >= 40) clearInterval(timer);
-    }, 500);
   },
 
   setupLanguageSwitcher() {
@@ -81,10 +63,7 @@ const App = {
         } catch (err) {}
         this.updateDocumentLanguage(this.currentLang);
         this.applyTranslations(this.currentLang);
-        this.applyGoogleTranslation(this.currentLang);
         this.showToast(`Language selected: ${select.options[select.selectedIndex].text}`);
-        // Re-apply translation after dynamic panels/cards update their text.
-        window.setTimeout(() => this.applyGoogleTranslation(this.currentLang), 1200);
       });
     }
   },
